@@ -95,6 +95,29 @@ target_include_directories(imgui_lib PUBLIC ${imgui_SOURCE_DIR})
 target_compile_features(imgui_lib PUBLIC cxx_std_20)
 
 # ----------------------------
+# Core library (for tests & app)
+# ----------------------------
+add_library(dice_core STATIC
+  src/core/GameObject.cpp
+)
+
+target_include_directories(dice_core
+  PUBLIC
+    ${CMAKE_SOURCE_DIR}       
+    ${CMAKE_SOURCE_DIR}/include 
+)
+
+target_link_libraries(dice_core
+  PUBLIC
+    sfml-graphics
+    sfml-window
+    sfml-system
+    nlohmann_json::nlohmann_json
+    spdlog::spdlog
+)
+
+
+# ----------------------------
 # Application
 # ----------------------------
 add_executable(${PROJECT_NAME}
@@ -112,16 +135,33 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${LUA_INCLUDE_DIR})
 
 target_link_libraries(${PROJECT_NAME}
   PRIVATE
-    sfml-graphics
-    sfml-network
-    sfml-window
-    sfml-system
+    dice_core
 
+    sfml-network
     ${LUA_LIBRARY}
     imgui_lib
-    nlohmann_json::nlohmann_json
     spdlog::spdlog
+    nlohmann_json::nlohmann_json
 )
+
+# ----------------------------
+# Tests
+# ----------------------------
+enable_testing()
+
+add_executable(dice_tests
+  tests/core/test_GameObject.cpp
+)
+
+target_link_libraries(dice_tests
+  PRIVATE
+    dice_core
+    GTest::gtest_main
+)
+
+include(GoogleTest)
+gtest_discover_tests(dice_tests)
+
 
 # in case of sol2 is not just header-only
 if(TARGET sol2::sol2)
