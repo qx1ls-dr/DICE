@@ -1,4 +1,5 @@
 # Build directories
+third-party/
 build/
 bin/
 lib/

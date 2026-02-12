@@ -1,7 +1,7 @@
 BasedOnStyle: LLVM
 
 Language: Cpp
-Standard: Cpp20
+Standard: c++20
 
 IndentWidth: 4
 TabWidth: 4
@@ -36,7 +36,6 @@ IncludeCategories:
     Priority: 3
 
 SpaceAfterTemplateKeyword: true
-SpaceBeforeRangeBasedForLoopDeclaration: true
 
 AlignAfterOpenBracket: Align
 AlignOperands: true
