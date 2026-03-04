@@ -1,0 +1,53 @@
+name: CI Checks
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # -------------
+      # clang-format 
+      # -------------
+      - name: Check code format with clang-format
+        uses: doozyx/clang-format-lint@v0.18.2
+        with:
+          source: "./"
+          exclude: "third_party" 
+          clangFormatVersion: "15"
+
+      # -----------
+      # clang-tidy 
+      # -----------
+      - name: Install clang tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy clang-format
+
+      - name: Generate compile_commands.json
+        run: |
+          mkdir -p build && cd build
+          cmake .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          cp compile_commands.json ..
+
+      - name: Get list of changed C++ files
+        id: files
+        run: |
+          git fetch origin main
+          CHANGED=$(git diff --name-only origin/main...HEAD | grep -E '\.(cpp|hpp|c|h)$' || true)
+          echo "changed_files=$CHANGED" >> $GITHUB_OUTPUT
+
+      - name: Run clang-tidy on changed files
+        if: steps.files.outputs.changed_files != ''
+        run: |
+          echo "Running clang-tidy on changed files..."
+          for file in ${{ steps.files.outputs.changed_files }}; do
+            echo "Checking $file"
+            clang-tidy -p=./build -quiet "$file"
+          done
