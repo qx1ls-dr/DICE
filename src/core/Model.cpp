@@ -107,11 +107,11 @@ nlohmann::json Model::toJson() const {
 }
 
 std::shared_ptr<GameObject> Model::makeFromJsonNode(const nlohmann::json& nodeJson) {
-    const std::string type = nodeJson.value("type", "GameObject");
+    const std::string typeStr = nodeJson.value("type", "GameObject");
     const std::string id = nodeJson.value("id", "");
     const std::string name = nodeJson.value("name", "");
 
-    auto obj = factory_->create(type, id, name);
+    auto obj = factory_->create(objectTypeFromString(typeStr), id, name);
 
     obj->fromJson(nodeJson);
 

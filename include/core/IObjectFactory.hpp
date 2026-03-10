@@ -8,17 +8,29 @@
 
 namespace dice::core {
 
+enum class ObjectType {
+    GameObject,
+    Chip,
+    Card,
+};
+
+inline ObjectType objectTypeFromString(const std::string& s) {
+    if (s == "Chip")       return ObjectType::Chip;
+    if (s == "Card")       return ObjectType::Card;
+    return ObjectType::GameObject;
+}
+
 class IObjectFactory {
 public:
     virtual ~IObjectFactory() = default;
     virtual std::shared_ptr<GameObject>
-    create(const std::string& type, const std::string& id, const std::string& name) = 0;
+    create(ObjectType type, const std::string& id, const std::string& name) = 0;
 };
 
 class GameObjectFactory : public IObjectFactory {
 public:
     std::shared_ptr<GameObject>
-    create(const std::string&, const std::string& id, const std::string& name) override {
+    create(ObjectType, const std::string& id, const std::string& name) override {
         return std::make_shared<GameObject>(id, name);
     }
 };

@@ -12,14 +12,17 @@ namespace dice::scene {
 class DefaultObjectFactory : public dice::core::IObjectFactory {
 public:
     std::shared_ptr<dice::core::GameObject>
-    create(const std::string& type,
+    create(dice::core::ObjectType type,
            const std::string& id,
            const std::string& name) override {
-        if (type == "Chip")
+        switch (type) {
+        case dice::core::ObjectType::Chip:
             return std::make_shared<dice::components::Chip>(id, name);
-        if (type == "Card")
+        case dice::core::ObjectType::Card:
             return std::make_shared<dice::components::Card>(id, name);
-        return std::make_shared<dice::core::GameObject>(id, name);
+        default:
+            return std::make_shared<dice::core::GameObject>(id, name);
+        }
     }
 };
 
