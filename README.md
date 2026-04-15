@@ -1,3 +1,4 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/8d4f552a98dc440a9aed7e929e9f7dd8)](https://app.codacy.com/gh/qx1ls-dr/DICE?utm_source=github.com&utm_medium=referral&utm_content=qx1ls-dr/DICE&utm_campaign=Badge_Grade)
 [![Contributors](https://img.shields.io/github/contributors/qx1ls-dr/DICE.svg?style=for-the-badge)](https://github.com/qx1ls-dr/DICE/graphs/contributors)
 [![Forks](https://img.shields.io/github/forks/qx1ls-dr/DICE.svg?style=for-the-badge)](https://github.com/qx1ls-dr/DICE/network/members)
 [![Stargazers](https://img.shields.io/github/stars/qx1ls-dr/DICE.svg?style=for-the-badge)](https://github.com/qx1ls-dr/DICE/stargazers)
