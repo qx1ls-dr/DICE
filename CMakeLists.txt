@@ -105,6 +105,9 @@ add_library(dice_core STATIC
   src/ui/View.cpp
   src/core/Model.cpp
   src/components/Card.cpp
+  src/core/Action.cpp
+  src/core/ActionManager.cpp
+  src/core/SceneValidator.cpp
 )
 
 target_include_directories(dice_core
@@ -211,6 +214,9 @@ add_executable(dice_tests
   tests/ui/test_View.cpp
   tests/core/test_Model.cpp
   tests/core/test_ResourceManager.cpp
+  tests/core/test_Action.cpp
+  tests/core/test_ActionManager.cpp
+  tests/core/test_SceneValidator.cpp
 )
 
 target_link_libraries(dice_tests
@@ -232,6 +238,22 @@ target_link_libraries(dice_scripting_tests
 include(GoogleTest)
 gtest_discover_tests(dice_tests)
 gtest_discover_tests(dice_scripting_tests)
+
+option(ENABLE_SANITIZERS "Enable sanitizers" OFF)
+
+if (ENABLE_SANITIZERS AND UNIX AND NOT APPLE)
+  message(STATUS "Sanitizers enabled")
+
+  set(SAN_FLAGS -fsanitize=address,undefined)
+
+  add_compile_options(
+    ${SAN_FLAGS}
+    -fno-omit-frame-pointer
+    -g
+  )
+
+  add_link_options(${SAN_FLAGS})
+endif()
 
 # ----------------------------
 # Application compile options

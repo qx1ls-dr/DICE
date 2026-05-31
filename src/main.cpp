@@ -46,21 +46,28 @@ int main() {
 
     sf::Font font;
     const bool fontOk = font.loadFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+    if (fontOk) {
+        spdlog::info("Font loaded");
+    } else {
+        spdlog::warn("Font not found — text will use fallback");
+    }
 
     Model model(makeDefaultFactory());
     LuaScriptEngine luaEngine;
 
     Controller controller(model, view, luaEngine, window);
-    controller.registerDefaultFunctions(textures, font, fontOk);
+    controller.registerDefaultFunctions(textures, fontOk ? &font : nullptr);
 
     if (!luaEngine.executeGlobalScript("scripts/game.lua")) {
         spdlog::error("Failed to load scripts/game.lua — run from project root!");
         return 1;
     }
     if (!controller.loadScene("scenes/demo.json")) {
+        spdlog::error("Failed to load scenes/demo.json");
         return 1;
     }
     controller.loadTextures(textures);
+    spdlog::info("Textures loaded");
 
     sf::Clock clock;
     while (window.isOpen()) {

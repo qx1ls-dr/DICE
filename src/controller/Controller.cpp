@@ -40,6 +40,7 @@ void Controller::loadTextures(dice::core::ResourceManager<sf::Texture>& textures
             if (!loadedTextureIds_.contains(tf)) {
                 textures.load(tf, tf);
                 loadedTextureIds_.insert(tf);
+                spdlog::info("Controller: texture loaded '{}'", tf);
             }
             obj->setTexture(textures.get(tf).get());
         }
@@ -50,16 +51,15 @@ void Controller::loadTextures(dice::core::ResourceManager<sf::Texture>& textures
 }
 
 void Controller::registerDefaultFunctions(dice::core::ResourceManager<sf::Texture>& textures,
-                                          const sf::Font& font,
-                                          bool font_ok) {
+                                          const sf::Font* font) {
     lua_.registerFunction("cpp_rand", [](int lo, int hi) -> int {
         static std::mt19937 rng(std::random_device{}());
         return std::uniform_int_distribution<int>(lo, hi)(rng);
     });
 
-    auto makeText = [&font](const std::string& str, float size, int r, int g, int b) {
+    auto makeText = [font](const std::string& str, float size, int r, int g, int b) {
         sf::Text t;
-        t.setFont(font);
+        t.setFont(*font);
         t.setString(sf::String::fromUtf8(str.begin(), str.end()));
         t.setCharacterSize(static_cast<unsigned>(size));
         t.setFillColor(sf::Color(r, g, b));
@@ -70,9 +70,9 @@ void Controller::registerDefaultFunctions(dice::core::ResourceManager<sf::Textur
 
     lua_.registerFunction(
         "cpp_draw_text_left",
-        [this, &font, font_ok, makeText](
+        [this, font, makeText](
             const std::string& s, float x, float y, float sz, int r, int g, int b) {
-            if (!font_ok) {
+            if (font == nullptr) {
                 return;
             }
             auto t = makeText(s, sz, r, g, b);
@@ -82,9 +82,9 @@ void Controller::registerDefaultFunctions(dice::core::ResourceManager<sf::Textur
 
     lua_.registerFunction(
         "cpp_draw_text_center",
-        [this, &font, font_ok, makeText](
+        [this, font, makeText](
             const std::string& s, float x, float y, float sz, int r, int g, int b) {
-            if (!font_ok) {
+            if (font == nullptr) {
                 return;
             }
             auto t = makeText(s, sz, r, g, b);
@@ -96,9 +96,9 @@ void Controller::registerDefaultFunctions(dice::core::ResourceManager<sf::Textur
 
     lua_.registerFunction(
         "cpp_draw_text_right",
-        [this, &font, font_ok, makeText](
+        [this, font, makeText](
             const std::string& s, float x, float y, float sz, int r, int g, int b) {
-            if (!font_ok) {
+            if (font == nullptr) {
                 return;
             }
             auto t = makeText(s, sz, r, g, b);
@@ -178,8 +178,10 @@ void Controller::onMousePressed(const sf::Event::MouseButtonEvent& ev) {
         const auto b = picked->getGlobalBounds();
         chipHalfW_ = b.width / 2.F;
         chipHalfH_ = b.height / 2.F;
+        spdlog::debug("Controller: drag start '{}'", picked->getId());
         lua_.fireEvent(dice::scripting::kEventOnDragStart, draggedObj_.get());
     } else if (picked) {
+        spdlog::debug("Controller: click '{}'", picked->getId());
         lua_.fireEvent(dice::scripting::kEventOnClick, picked.get());
     }
 }
@@ -219,7 +221,10 @@ void Controller::onMouseMoved(const sf::Event::MouseMoveEvent& ev) {
 void Controller::onMouseReleased(const sf::Event::MouseButtonEvent& /*ev*/) {
     if (draggedObj_) {
         if (!wasDragging_) {
+            spdlog::debug("Controller: click (on release) '{}'", draggedObj_->getId());
             lua_.fireEvent(dice::scripting::kEventOnClick, draggedObj_.get());
+        } else {
+            spdlog::debug("Controller: drag end '{}'", draggedObj_->getId());
         }
         lua_.fireEvent(dice::scripting::kEventOnDragEnd, draggedObj_.get());
         draggedObj_ = nullptr;
