@@ -9,8 +9,7 @@
 namespace dice {
 
 Application::Application()
-    : view_(window_),
-      controller_(model_, view_, lua_, window_, textures_),
+    : view_(window_), controller_(model_, view_, lua_, window_, textures_),
       networkManager_(model_, actionManager_, lua_) {
     model_.setFactory(dice::scene::makeDefaultFactory());
 }
