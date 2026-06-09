@@ -15,6 +15,9 @@ nlohmann::json makeValidObject(const std::string& id = "obj_1",
 }
 
 nlohmann::json makeValidScene(nlohmann::json objects = nlohmann::json::array()) {
+    if (!objects.is_array()) {
+        objects = nlohmann::json::array({std::move(objects)});
+    }
     if (objects.empty()) {
         objects.push_back(makeValidObject());
     }
@@ -50,6 +53,31 @@ TEST(SceneValidatorTest, ObjectsIsNotArray) {
     validator.validate({{"objects", "not_an_array"}}, test_path);
     EXPECT_TRUE(validator.hasErrors());
     EXPECT_EQ(validator.errors()[0].code_, MessageCode::E_OBJECTS_IS_NOT_AN_ARRAY);
+}
+
+TEST(SceneValidatorTest, ObjectCountLimitExceeded) {
+    constexpr std::size_t kLimit = 5;
+    SceneValidator validator(kLimit);
+    nlohmann::json objects = nlohmann::json::array();
+    for (std::size_t i = 0; i <= kLimit; ++i) {
+        objects.push_back(makeValidObject("obj_" + std::to_string(i)));
+    }
+
+    validator.validate(makeValidScene(objects), test_path);
+    EXPECT_TRUE(validator.hasErrors());
+    EXPECT_EQ(validator.errors()[0].code_, MessageCode::E_OBJECT_COUNT_LIMIT_EXCEEDED);
+}
+
+TEST(SceneValidatorTest, ObjectCountWithinLimitPasses) {
+    constexpr std::size_t kLimit = 5;
+    SceneValidator validator(kLimit);
+    nlohmann::json objects = nlohmann::json::array();
+    for (std::size_t i = 0; i < kLimit; ++i) {
+        objects.push_back(makeValidObject("obj_" + std::to_string(i)));
+    }
+
+    validator.validate(makeValidScene(objects), test_path);
+    EXPECT_FALSE(validator.hasErrors());
 }
 
 // ========== Required fields ==========
@@ -417,6 +445,48 @@ TEST(SceneValidatorTriggers, TriggersNotObject) {
     EXPECT_TRUE(v.hasErrors());
 }
 
+// ========== checkDuplicateIds ==========
+
+TEST(SceneValidatorTest, DuplicateIdInChildOfRootDetected) {
+    auto scene = makeValidScene();
+    scene["objects"] = nlohmann::json::array({nlohmann::json{
+        {"id", "root1"},
+        {"type", "GameObject"},
+        {"children", nlohmann::json::array({{{"id", "root1"}, {"type", "GameObject"}}})}}});
+    dice::core::SceneValidator validator;
+    validator.validate(scene, "test.json");
+    bool found = false;
+    for (const auto& e : validator.errors()) {
+        if (e.code_ == dice::core::MessageCode::E_DUPLICATE_ID) {
+            found = true;
+        }
+    }
+    EXPECT_TRUE(found);
+}
+
+TEST(SceneValidatorTest, DuplicateIdAcrossTwoChildSubtreesDetected) {
+    auto scene = makeValidScene();
+    scene["objects"] = nlohmann::json::array({
+        nlohmann::json{
+            {"id", "a"},
+            {"type", "GameObject"},
+            {"children", nlohmann::json::array({{{"id", "dup"}, {"type", "GameObject"}}})}},
+        nlohmann::json{
+            {"id", "b"},
+            {"type", "GameObject"},
+            {"children", nlohmann::json::array({{{"id", "dup"}, {"type", "GameObject"}}})}},
+    });
+    dice::core::SceneValidator validator;
+    validator.validate(scene, "test.json");
+    bool found = false;
+    for (const auto& e : validator.errors()) {
+        if (e.code_ == dice::core::MessageCode::E_DUPLICATE_ID) {
+            found = true;
+        }
+    }
+    EXPECT_TRUE(found);
+}
+
 // ========== State reset ==========
 
 TEST(SceneValidatorTest, ValidatorClearsStateBetweenValidations) {
@@ -455,6 +525,22 @@ TEST(SceneValidatorTest, RecursiveObjectValidation) {
         if (e.code_ == MessageCode::E_ID_IS_NOT_A_STRING) {
             found = true;
             break;
+        }
+    }
+    EXPECT_TRUE(found);
+}
+
+// ========== Script file existence checks ==========
+
+TEST(SceneValidatorTest, SceneScriptFileNotFoundEmitsWarning) {
+    auto scene = makeValidScene();
+    scene["scripts"] = nlohmann::json::array({"nonexistent_xyz_script.lua"});
+    dice::core::SceneValidator validator;
+    validator.validate(scene, "scenes/test.json");
+    bool found = false;
+    for (const auto& w : validator.warnings()) {
+        if (w.code_ == dice::core::MessageCode::W_SCRIPT_FILE_NOT_FOUND) {
+            found = true;
         }
     }
     EXPECT_TRUE(found);

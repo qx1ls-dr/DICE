@@ -53,32 +53,15 @@ DICE - это комплексный инструмент разработки �
 [![sol2](https://img.shields.io/badge/sol2-Lua%20Bindings-000000?style=for-the-badge&logo=lua)](https://sol2.readthedocs.io/)
 
 
-## Установка на Linux
+## Документация
 
-1. Склонируйте репозиторий
-   ```sh
-   git clone https://github.com/qx1ls-dr/DICE.git
-   ```
-2. Перейдите в каталог DICE и пропишите
-   ```sh
-   cmake . -B build
-   cd build
-   make
-   ```
-3. Подготовьте конфигурацию (используйте пример из samples)
-   ```sh
-   cp samples/game.json .
-   ln -s samples/scenes scenes
-   ln -s samples/scripts scripts
-   ```
-4. Запустите приложение
-   ```sh
-    ./dice
-   ```
+- [Архитектура проекта](docs/architecture.md) — обзор модулей, жизненный цикл объектов, Lua-интеграция
+- [Примеры и сниппеты](docs/examples/README.md) — готовые игры и изолированные примеры с кодом
+
 
 ## Конфигурация
 
-DICE использует `game.json` в корневом каталоге для базовых настроек. Вы можете найти примеры сцен и скриптов в директории `samples/`.
+DICE загружает `game.json` из текущей рабочей директории. Запускайте бинарник из папки `build/` — именно туда CMake копирует все нужные файлы. Примеры сцен и скриптов находятся в `samples/`.
 
 ## Лицензия
 

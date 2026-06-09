@@ -8,6 +8,9 @@
 
 #include <nlohmann/json.hpp>
 
+#include "components/Deck.hpp"
+#include "components/Dice.hpp"
+#include "core/SceneValidator.hpp"
 #include "scripting/LuaScript.hpp"
 #include <spdlog/spdlog.h>
 
@@ -38,6 +41,43 @@ std::string keyToString(sf::Keyboard::Key key) {
     };
     const auto it = kKeyNames.find(key);
     return it != kKeyNames.end() ? std::string{it->second} : std::string{};
+}
+
+bool executeSceneScripts(const nlohmann::json& scene_json, dice::scripting::LuaScriptEngine& lua) {
+    if (!scene_json.contains("scripts") || !scene_json["scripts"].is_array()) {
+        return true;
+    }
+    for (const auto& entry : scene_json["scripts"]) {
+        if (entry.is_string()) {
+            const auto script = entry.get<std::string>();
+            if (!lua.executeGlobalScript(script)) {
+                spdlog::error("Controller: scene script failed, aborting scene load: {}", script);
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+void shuffleLuaTable(sol::table t) {
+    if (!t.valid()) {
+        return;
+    }
+    std::vector<sol::object> items;
+    for (size_t i = 1;; ++i) {
+        const sol::object obj = t[i];
+        if (!obj.valid()) {
+            break;
+        }
+        items.push_back(obj);
+    }
+    if (items.empty()) {
+        return;
+    }
+    std::shuffle(items.begin(), items.end(), getRng());
+    for (size_t i = 0; i < items.size(); ++i) {
+        t[i + 1] = items[i];
+    }
 }
 
 void mergePresetsIntoObject(
@@ -94,18 +134,20 @@ bool Controller::loadScene(const std::filesystem::path& path) {
         return false;
     }
 
+    dice::core::SceneValidator validator(static_cast<std::size_t>(maxSceneObjects_));
+    if (!validator.validate(sceneJson, path)) {
+        spdlog::error("Controller: scene '{}' failed validation", path.string());
+        return false;
+    }
+
     draggedObj_.reset();
     hoveredObj_.reset();
     wasDragging_ = false;
 
     lua_.clearSceneState();
 
-    if (sceneJson.contains("scripts") && sceneJson["scripts"].is_array()) {
-        for (const auto& entry : sceneJson["scripts"]) {
-            if (entry.is_string()) {
-                lua_.executeGlobalScript(entry.get<std::string>());
-            }
-        }
+    if (!executeSceneScripts(sceneJson, lua_)) {
+        return false;
     }
 
     model_.clear();
@@ -119,6 +161,25 @@ bool Controller::loadScene(const std::filesystem::path& path) {
 
     loadedTextureIds_.clear();
     loadTexturesForModel();
+
+    model_.forEachDepthFirst([&](const std::shared_ptr<dice::core::GameObject>& obj) {
+        if (auto* deck = dynamic_cast<dice::components::Deck*>(obj.get())) {
+            deck->setFaceDown(deck->isFaceDown());
+        }
+        if (auto* die = dynamic_cast<dice::components::Dice*>(obj.get())) {
+            for (const auto& path : die->getFaceTextures()) {
+                if (!path.empty() && !loadedTextureIds_.contains(path)) {
+                    textures_.load(path, path);
+                    loadedTextureIds_.insert(path);
+                }
+            }
+            const auto& path = die->getFaceTexturePath(die->getValue());
+            if (!path.empty()) {
+                obj->setTexture(textures_.get(path).get());
+            }
+        }
+    });
+
     refreshFieldBounds();
 
     currentScenePath_ = path;
@@ -132,7 +193,11 @@ void Controller::loadTexturesForModel() {
         if (!tf.empty()) {
             if (!loadedTextureIds_.contains(tf)) {
                 textures_.load(tf, tf);
-                loadedTextureIds_.insert(tf);
+                if (textures_.contains(tf)) {
+                    loadedTextureIds_.insert(tf);
+                } else {
+                    spdlog::warn("Controller: failed to load texture '{}'", tf);
+                }
             }
             obj->setTexture(textures_.get(tf).get());
         }
@@ -153,28 +218,22 @@ void Controller::registerDefaultFunctions(const sf::Font* font) {
         }
     });
 
-    lua_.registerFunction("cpp_shuffle", [](sol::table t) {
-        if (!t.valid()) {
-            return;
-        }
-        std::vector<sol::object> items;
-        for (size_t i = 1;; ++i) {
-            const sol::object obj = t[i];
-            if (!obj.valid()) {
-                break;
-            }
-            items.push_back(obj);
-        }
-        if (items.empty()) {
-            return;
-        }
+    lua_.registerFunction("cpp_dice_roll",
+                          [this](const std::string& id) -> int { return luaDiceRoll(id); });
 
-        std::shuffle(items.begin(), items.end(), getRng());
-
-        for (size_t i = 0; i < items.size(); ++i) {
-            t[i + 1] = items[i];
-        }
+    lua_.registerFunction("cpp_deck_draw", [this](const std::string& deck_id) -> std::string {
+        return luaDeckDraw(deck_id);
     });
+
+    lua_.registerFunction("cpp_deck_count", [this](const std::string& deck_id) -> int {
+        const auto obj = model_.getObject(deck_id);
+        if (!obj) {
+            return 0;
+        }
+        return static_cast<int>(obj->getChildren().size());
+    });
+
+    lua_.registerFunction("cpp_shuffle", [](sol::table t) { shuffleLuaTable(std::move(t)); });
 
     auto makeText = [font](const std::string& str, float size, int r, int g, int b) {
         sf::Text t;
@@ -234,15 +293,7 @@ void Controller::registerDefaultFunctions(const sf::Font* font) {
 
     lua_.registerFunction("cpp_set_obj_texture",
                           [this](const std::string& obj_id, const std::string& path) {
-                              auto obj = model_.getObject(obj_id);
-                              if (!obj) {
-                                  return;
-                              }
-                              if (!loadedTextureIds_.contains(path)) {
-                                  textures_.load(path, path);
-                                  loadedTextureIds_.insert(path);
-                              }
-                              obj->setTexture(textures_.get(path).get());
+                              luaSetObjTexture(obj_id, path);
                           });
 
     lua_.setSceneLoadCallback([this](const std::string& path) { pendingScenePath_ = path; });
@@ -283,7 +334,7 @@ void Controller::update(float dt) {
         }
         return;
     }
-    lua_.callGlobal("update", dt);
+    lua_.callGlobalIfExists("update", dt);
     view_.update(dt);
 }
 
@@ -314,6 +365,7 @@ void Controller::onMousePressed(const sf::Event::MouseButtonEvent& ev) {
     if (picked && picked->isDraggable()) {
         draggedObj_ = picked;
         dragOffset_ = picked->getPosition() - wp;
+        dragStartPos_ = wp;
         wasDragging_ = false;
         const auto b = picked->getGlobalBounds();
         chipHalfW_ = b.width / 2.F;
@@ -330,6 +382,11 @@ void Controller::onMouseMoved(const sf::Event::MouseMoveEvent& ev) {
     const auto wp = view_.screenToWorld({ev.x, ev.y});
 
     if (draggedObj_) {
+        const sf::Vector2f delta = wp - dragStartPos_;
+        if (!wasDragging_ && std::sqrt(delta.x * delta.x + delta.y * delta.y) < kDragThreshold) {
+            return;
+        }
+        wasDragging_ = true;
         sf::Vector2f newPos = wp + dragOffset_;
         newPos.x = std::clamp(newPos.x,
                               fieldBounds_.left + chipHalfW_,
@@ -339,7 +396,6 @@ void Controller::onMouseMoved(const sf::Event::MouseMoveEvent& ev) {
                               fieldBounds_.top + fieldBounds_.height - chipHalfH_);
         draggedObj_->setPosition(newPos.x, newPos.y);
         lua_.fireEvent(dice::scripting::kEventOnMove, draggedObj_.get());
-        wasDragging_ = true;
     }
 
     const auto objs = collectObjects();
@@ -373,7 +429,58 @@ void Controller::onMouseReleased(const sf::Event::MouseButtonEvent& /*ev*/) {
     }
 }
 
+int Controller::luaDiceRoll(const std::string& id) {
+    const auto obj = model_.getObject(id);
+    if (!obj) {
+        return 0;
+    }
+    auto* die = dynamic_cast<dice::components::Dice*>(obj.get());
+    if (die == nullptr) {
+        return 0;
+    }
+    const int val = die->roll();
+    const auto& path = die->getFaceTexturePath(val);
+    if (!path.empty()) {
+        if (!loadedTextureIds_.contains(path)) {
+            textures_.load(path, path);
+            loadedTextureIds_.insert(path);
+        }
+        obj->setTexture(textures_.get(path).get());
+    }
+    return val;
+}
+
+std::string Controller::luaDeckDraw(const std::string& deck_id) {
+    const auto obj = model_.getObject(deck_id);
+    if (!obj) {
+        return "";
+    }
+    const auto& children = obj->getChildren();
+    if (children.empty()) {
+        return "";
+    }
+    const auto top = children.back();
+    const std::string top_id = top->getId();
+    obj->removeChild(top_id);
+    model_.addRootObject(top);
+    return top_id;
+}
+
+void Controller::luaSetObjTexture(const std::string& obj_id, const std::string& path) {
+    auto obj = model_.getObject(obj_id);
+    if (!obj) {
+        return;
+    }
+    if (!loadedTextureIds_.contains(path)) {
+        textures_.load(path, path);
+        loadedTextureIds_.insert(path);
+    }
+    obj->setTexture(textures_.get(path).get());
+}
+
 void Controller::refreshFieldBounds() {
+    fieldBounds_ = sf::FloatRect(
+        0.F, 0.F, static_cast<float>(window_.getSize().x), static_cast<float>(window_.getSize().y));
     if (auto board = model_.getObject("board")) {
         fieldBounds_ = board->getGlobalBounds();
     }

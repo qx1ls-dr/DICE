@@ -33,6 +33,10 @@ public:
 
     [[nodiscard]] bool loadScene(const std::filesystem::path& path);
 
+    void setMaxSceneObjects(int n) {
+        maxSceneObjects_ = n;
+    }
+
     void registerDefaultFunctions(const sf::Font* font);
 
     void handleEvent(const sf::Event& event);
@@ -47,18 +51,25 @@ private:
     void refreshFieldBounds();
     void loadTexturesForModel();
 
+    int luaDiceRoll(const std::string& id);
+    std::string luaDeckDraw(const std::string& deck_id);
+    void luaSetObjTexture(const std::string& obj_id, const std::string& path);
+
     dice::core::Model& model_;
     dice::view::View& view_;
     dice::scripting::LuaScriptEngine& lua_;
     sf::RenderWindow& window_;
     dice::core::ResourceManager<sf::Texture>& textures_;
 
+    int maxSceneObjects_ = 1000;
     std::filesystem::path currentScenePath_;
     std::filesystem::path pendingScenePath_;
 
     std::shared_ptr<dice::core::GameObject> draggedObj_;
     sf::Vector2f dragOffset_;
+    sf::Vector2f dragStartPos_;
     bool wasDragging_{false};
+    static constexpr float kDragThreshold{5.F};
     float chipHalfW_{0.F};
     float chipHalfH_{0.F};
 
