@@ -420,6 +420,14 @@ void HostServer::broadcastMoveObject(const std::string& object_id, float x, floa
     broadcast(NetworkMessage::createMoveObject(object_id, x, y));
 }
 
+void HostServer::broadcastState(const std::string& json_str) {
+    broadcast(NetworkMessage::createState(json_str));
+}
+
+void HostServer::allowEvent(const std::string& event_name) {
+    allowedEvents_.insert(event_name);
+}
+
 void HostServer::broadcastSnapshot() {
     nlohmann::json state;
     {
