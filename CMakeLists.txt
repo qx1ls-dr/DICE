@@ -167,28 +167,6 @@ else()
 endif()
 
 # ----------------------------
-# Network library
-# ----------------------------
-add_library(dice_network STATIC
-  src/network/GameClient.cpp
-  src/network/HostServer.cpp
-)
-
-target_include_directories(dice_network
-  PUBLIC
-    ${CMAKE_SOURCE_DIR}/include
-)
-
-target_link_libraries(dice_network
-  PUBLIC
-    dice_core
-    dice_scripting
-    sfml-network
-    spdlog::spdlog
-    nlohmann_json::nlohmann_json
-)
-
-# ----------------------------
 # Controller library
 # ----------------------------
 add_library(dice_controller STATIC

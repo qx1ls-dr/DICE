@@ -7,11 +7,11 @@
 
 namespace dice::network {
 
-HostServer::HostServer(core::Model& model,
-                       core::ActionManager& action_manager,
+HostServer::HostServer(core::Model&                model,
+                       core::ActionManager&        action_manager,
                        scripting::LuaScriptEngine& lua)
-    : model_(model), actionManager_(action_manager), lua_(lua),
-      actionValidator_(
+    : model_(model), actionManager_(action_manager), lua_(lua)
+    , actionValidator_(
           std::make_unique<core::ActionValidator>(model_, actionManager_, lua_, modelMutex_)) {}
 
 HostServer::~HostServer() {
@@ -32,18 +32,39 @@ bool HostServer::start(uint16_t port) {
     }
 
     listener_.setBlocking(false);
-    isRunning_ = true;
+    isRunning_  = true;
     gameStarted_ = false;
 
-    actionValidator_->setOnAccepted([this](const core::Action& action) { broadcastSnapshot(); });
-    actionValidator_->setOnRejected([this](const core::Action& action, const std::string& reason) {
-        auto rejectMsg = NetworkMessage::createActionRejected(reason);
-        sendToClient(action.fromPlayerId, rejectMsg);
-    });
+    actionValidator_->setOnAccepted(
+        [this](const core::Action& action) {
+            std::visit([&](const auto& variant) {
+                using T = std::decay_t<decltype(variant)>;
+                if constexpr (std::is_same_v<T, core::MoveObjectAction>) {
+                    const auto& mv = variant;
+                    broadcast(NetworkMessage::createMoveObject(
+                        mv.getObjectId(), mv.getNewPos().x, mv.getNewPos().y));
+                } else {
+                    // GameAction: broadcast the event, then snapshot so
+                    // Lua side-effects (state changes) are synced too
+                    const auto& ga = static_cast<const core::GameAction&>(variant);
+                    const std::string objId =
+                        ga.payload.value("object_id", std::string{});
+                    if (!objId.empty()) {
+                        broadcast(NetworkMessage::createEvent(objId, ga.actionType));
+                    }
+                    broadcastSnapshot();
+                }
+            }, action.data);
+        });
+    actionValidator_->setOnRejected(
+        [this](const core::Action& action, const std::string& reason) {
+            auto rejectMsg = NetworkMessage::createActionRejected(reason);
+            sendToClient(action.fromPlayerId, rejectMsg);
+        });
     actionValidator_->setOnUndoApplied([this]() { broadcastSnapshot(); });
     actionValidator_->start();
 
-    lastPingTime_ = std::chrono::steady_clock::now();
+    lastPingTime_      = std::chrono::steady_clock::now();
     lastBroadcastTime_ = std::chrono::steady_clock::now();
 
     serverThread_ = std::thread(&HostServer::serverLoop, this);
@@ -107,21 +128,21 @@ void HostServer::acceptNewClients() {
 
         const std::string clientId = generateId();
 
-        auto ctx = std::make_shared<ClientContext>();
-        ctx->socket = std::move(client);
-        ctx->info.id = clientId;
-        ctx->info.name = "Player_" + std::to_string(clients_.size() + 1);
-        ctx->info.ip = ctx->socket->getRemoteAddress().toString();
-        ctx->info.port = ctx->socket->getRemotePort();
-        ctx->info.status = PlayerStatus::Connecting;
-        ctx->info.lastPing = std::chrono::steady_clock::now();
+        auto ctx          = std::make_shared<ClientContext>();
+        ctx->socket       = std::move(client);
+        ctx->info.setId(clientId);
+        ctx->info.setName("Player_" + std::to_string(clients_.size() + 1));
+        ctx->info.setIp(ctx->socket->getRemoteAddress().toString());
+        ctx->info.setPort(ctx->socket->getRemotePort());
+        ctx->info.setStatus(PlayerStatus::Connecting);
+        ctx->info.touchPing();
 
         {
             const std::lock_guard<std::mutex> lock(clientsMutex_);
-            clients_[ctx->info.id] = ctx;
+            clients_[ctx->info.getId()] = ctx;
         }
 
-        spdlog::info("New client connected: {} ({})", ctx->info.name, ctx->info.ip);
+        spdlog::info("New client connected: {} ({})", ctx->info.getName(), ctx->info.getIp());
 
         if (onClientJoined_) {
             onClientJoined_(ctx->info);
@@ -155,35 +176,22 @@ void HostServer::receiveFromClient(const std::string& client_id) {
             {
                 const std::lock_guard<std::mutex> lock(clientsMutex_);
                 if (auto it = clients_.find(client_id); it != clients_.end()) {
-                    it->second->info.lastPing = std::chrono::steady_clock::now();
+                    it->second->info.touchPing();
                 }
             }
 
             switch (msg->type) {
-                case MessageType::Handshake:
-                    handleHandshake(*msg);
-                    break;
-                case MessageType::PlayerReady:
-                    handlePlayerReady(*msg);
-                    break;
-                case MessageType::Event:
-                    handleEvent(*msg);
-                    break;
-                case MessageType::MoveObject:
-                    handleMoveObject(*msg);
-                    break;
-                case MessageType::Chat:
-                    handleChat(*msg);
-                    break;
-                case MessageType::Ping:
-                    handlePing(*msg);
-                    break;
-                case MessageType::Disconnect:
-                    removeClient(client_id);
-                    break;
+                case MessageType::Handshake:   handleHandshake(*msg);   break;
+                case MessageType::PlayerReady: handlePlayerReady(*msg); break;
+                case MessageType::Event:       handleEvent(*msg);       break;
+                case MessageType::MoveObject:  handleMoveObject(*msg);  break;
+                case MessageType::UndoRequest: handleUndo(*msg);        break;
+                case MessageType::Chat:        handleChat(*msg);        break;
+                case MessageType::Ping:        handlePing(*msg);        break;
+                case MessageType::Disconnect:  removeClient(client_id); break;
                 default:
-                    spdlog::warn(
-                        "Unknown message type from {}: {}", client_id, static_cast<int>(msg->type));
+                    spdlog::warn("Unknown message type from {}: {}",
+                                 client_id, static_cast<int>(msg->type));
                     break;
             }
         }
@@ -191,14 +199,14 @@ void HostServer::receiveFromClient(const std::string& client_id) {
 }
 
 void HostServer::handleHandshake(const NetworkMessage& msg) {
-    std::string playerName = msg.data.value("playerName", "Unknown");
+    const std::string playerName = msg.data.value("playerName", "Unknown");
 
     {
         const std::lock_guard<std::mutex> lock(clientsMutex_);
         auto it = clients_.find(msg.fromId);
         if (it != clients_.end()) {
-            it->second->info.name = playerName;
-            it->second->info.status = PlayerStatus::Connected;
+            it->second->info.setName(playerName);
+            it->second->info.setStatus(PlayerStatus::Connected);
         }
     }
 
@@ -226,8 +234,8 @@ void HostServer::handlePlayerReady(const NetworkMessage& msg) {
         const std::lock_guard<std::mutex> lock(clientsMutex_);
         auto it = clients_.find(msg.fromId);
         if (it != clients_.end()) {
-            it->second->info.status = PlayerStatus::Ready;
-            spdlog::info("Player {} is ready", it->second->info.name);
+            it->second->info.setStatus(PlayerStatus::Ready);
+            spdlog::info("Player {} is ready", it->second->info.getName());
         }
     }
 
@@ -245,28 +253,44 @@ void HostServer::handleEvent(const NetworkMessage& msg) {
         return;
     }
 
-    std::string objectId = msg.data.value("object_id", "");
-    std::string eventName = msg.data.value("event", "");
+    const std::string objectId  = msg.data.value("object_id", "");
+    const std::string eventName = msg.data.value("event", "");
 
     if (!isEventAllowedForClient(eventName)) {
         spdlog::warn("Client {} tried to call forbidden event: {}", msg.fromId, eventName);
+        auto reject = NetworkMessage::createActionRejected("Event not allowed: " + eventName);
+        sendToClient(msg.fromId, reject);
         return;
     }
 
     spdlog::info("Event from {}: {} on {}", msg.fromId, eventName, objectId);
 
+    // Build payload: object_id + all custom properties of the target object.
+    // This lets validate_action / apply_action read e.g. payload.player
+    // without having to look the object up themselves.
+    nlohmann::json payload = {{"object_id", objectId}};
     {
         const std::lock_guard<std::mutex> modelLock(modelMutex_);
         auto obj = model_.getObject(objectId);
         if (!obj) {
             spdlog::warn("Event target object not found: {}", objectId);
+            auto reject = NetworkMessage::createActionRejected("Object not found: " + objectId);
+            sendToClient(msg.fromId, reject);
             return;
         }
-        actionManager_.saveSnapshot(model_);
-        lua_.fireEvent(eventName, obj.get());
+        for (const auto& [k, v] : obj->getProperties()) {
+            payload[k] = v;
+        }
     }
 
-    broadcast(msg);
+    core::Action action;
+    action.fromPlayerId = msg.fromId;
+    action.sequenceId   = nextActionSeq_++;
+    action.data         = core::GameAction{
+        .actionType = eventName,
+        .payload    = std::move(payload),
+    };
+    actionValidator_->enqueue(std::move(action));
 }
 
 void HostServer::handleMoveObject(const NetworkMessage& msg) {
@@ -275,33 +299,32 @@ void HostServer::handleMoveObject(const NetworkMessage& msg) {
         return;
     }
 
-    std::string objectId = msg.data.value("objectId", "");
-    float x = msg.data.value("x", 0.0F);
-    float y = msg.data.value("y", 0.0F);
+    const std::string objectId = msg.data.value("objectId", "");
+    const float x = msg.data.value("x", 0.0F);
+    const float y = msg.data.value("y", 0.0F);
 
     spdlog::info("MoveObject from {}: {} to ({}, {})", msg.fromId, objectId, x, y);
 
-    core::MoveObjectAction action(objectId, sf::Vector2f(x, y));
+    core::Action action;
+    action.fromPlayerId = msg.fromId;
+    action.sequenceId   = nextActionSeq_++;
+    action.data         = core::MoveObjectAction(objectId, sf::Vector2f(x, y));
+    actionValidator_->enqueue(std::move(action));
+}
 
-    bool executed = false;
-    {
-        const std::lock_guard<std::mutex> modelLock(modelMutex_);
-        if (action.canExecute(model_)) {
-            actionManager_.saveSnapshot(model_);
-            action.execute(model_);
-            executed = true;
-        }
+void HostServer::handleUndo(const NetworkMessage& msg) {
+    if (!gameStarted_) {
+        spdlog::warn("UndoRequest received but game not started");
+        return;
     }
 
-    if (executed) {
-        broadcast(msg);
-    } else {
-        spdlog::warn("MoveObject rejected: {} cannot be moved", objectId);
-    }
+    const uint32_t targetSeq = msg.data.value("targetSeq", 0U);
+    spdlog::info("UndoRequest from {} (targetSeq={})", msg.fromId, targetSeq);
+    actionValidator_->receiveUndoVote(msg.fromId, targetSeq);
 }
 
 void HostServer::handleChat(const NetworkMessage& msg) {
-    std::string text = msg.data.value("text", "");
+    const std::string text = msg.data.value("text", "");
     spdlog::info("Chat from {}: {}", msg.fromId, text);
 
     broadcast(msg);
@@ -318,11 +341,11 @@ void HostServer::handlePing(const NetworkMessage& msg) {
     const std::lock_guard<std::mutex> lock(clientsMutex_);
     auto it = clients_.find(msg.fromId);
     if (it != clients_.end()) {
-        it->second->info.lastPing = std::chrono::steady_clock::now();
+        it->second->info.touchPing();
     }
 }
 
-bool HostServer::isEventAllowedForClient(const std::string& event_name) {
+bool HostServer::isEventAllowedForClient(const std::string& event_name) const {
     return allowedEvents_.contains(event_name);
 }
 
@@ -337,11 +360,10 @@ void HostServer::sendToClient(const std::string& client_id, const NetworkMessage
         ctx = it->second;
     }
 
-    auto data = msg.serialize();
+    auto data   = msg.serialize();
     auto status = sendAll(*ctx->socket, data);
     if (status != sf::Socket::Done) {
-        spdlog::warn(
-            "Failed to send to client {}, status: {}", client_id, static_cast<int>(status));
+        spdlog::warn("Failed to send to client {}, status: {}", client_id, static_cast<int>(status));
     }
 }
 
@@ -355,8 +377,7 @@ void HostServer::broadcast(const NetworkMessage& msg, const std::string& exclude
         }
         auto status = sendAll(*ctx->socket, data);
         if (status != sf::Socket::Done) {
-            spdlog::warn(
-                "Broadcast failed for client {}, status: {}", id, static_cast<int>(status));
+            spdlog::warn("Broadcast failed for client {}, status: {}", id, static_cast<int>(status));
         }
     }
 }
@@ -373,7 +394,7 @@ void HostServer::removeClient(const std::string& client_id) {
     }
 
     if (ctx) {
-        spdlog::info("Client disconnected: {}", ctx->info.name);
+        spdlog::info("Client disconnected: {}", ctx->info.getName());
 
         auto left = NetworkMessage::createPlayerLeft(client_id);
         broadcast(left);
@@ -385,7 +406,7 @@ void HostServer::removeClient(const std::string& client_id) {
 }
 
 void HostServer::update() {
-    auto now = std::chrono::steady_clock::now();
+    const auto  now     = std::chrono::steady_clock::now();
     const float elapsed = std::chrono::duration<float>(now - lastPingTime_).count();
 
     if (elapsed >= pingInterval_) {
@@ -407,13 +428,14 @@ void HostServer::update() {
 }
 
 void HostServer::checkTimeouts() {
-    auto now = std::chrono::steady_clock::now();
+    const auto now = std::chrono::steady_clock::now();
     std::vector<std::string> timedOut;
 
     {
         const std::lock_guard<std::mutex> lock(clientsMutex_);
         for (const auto& [id, ctx] : clients_) {
-            const float elapsed = std::chrono::duration<float>(now - ctx->info.lastPing).count();
+            const float elapsed =
+                std::chrono::duration<float>(now - ctx->info.getLastPing()).count();
             if (elapsed > timeoutInterval_) {
                 timedOut.push_back(id);
             }
@@ -490,13 +512,14 @@ std::string HostServer::generateId() {
     static std::random_device rd;
     static std::mt19937 gen(rd());
     static std::mutex genMutex;
-    static std::uniform_int_distribution<> dis(0, 15);
+    static std::uniform_int_distribution<int> dis(0, 15);
 
     const std::lock_guard<std::mutex> lock(genMutex);
     const std::string hex = "0123456789abcdef";
     std::string id = "client_";
+    id.reserve(id.size() + 16);
     for (int i = 0; i < 16; ++i) {
-        id += hex[dis(gen)];
+        id += hex[static_cast<std::size_t>(dis(gen))];
     }
     return id;
 }

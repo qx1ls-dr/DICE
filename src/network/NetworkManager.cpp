@@ -209,6 +209,28 @@ void NetworkManager::sendMoveObject(const std::string& object_id, float x, float
     }
 }
 
+void NetworkManager::sendUndo(uint32_t target_seq) {
+    if (gameClient_) {
+        gameClient_->sendUndo(target_seq);
+    } else if (hostServer_) {
+        // Host undoes locally via ActionValidator directly
+        actionManager_.undo(model_);
+        broadcastSnapshotFromHost();
+    }
+}
+
+void NetworkManager::setUndoQuorum(size_t quorum) {
+    // Applied lazily — HostServer picks up via ActionValidator which
+    // is only alive while hosting. Store and apply on next startHost.
+    undoQuorum_ = quorum;
+}
+
+void NetworkManager::broadcastSnapshotFromHost() {
+    if (hostServer_) {
+        hostServer_->broadcastSnapshot();
+    }
+}
+
 void NetworkManager::sendReady() {
     if (gameClient_) {
         gameClient_->sendReady();

@@ -261,10 +261,15 @@ void SceneValidator::checkTextureFile(const nlohmann::json& obj) {
 
     const auto path = obj["textureFile"].get<std::string>();
 
-    if (!path.empty() && !std::filesystem::exists(scene_directory_ / path)) {
-        addWarning(MessageCode::W_TEXTURE_FILE_NOT_FOUND,
-                   "Texture file not found: " + (scene_directory_ / path).string(),
-                   obj);
+    if (!path.empty()) {
+        const bool found =
+            std::filesystem::exists(scene_directory_ / path) ||
+            std::filesystem::exists(scene_directory_.parent_path() / path);
+        if (!found) {
+            addWarning(MessageCode::W_TEXTURE_FILE_NOT_FOUND,
+                       "Texture file not found: " + (scene_directory_ / path).string(),
+                       obj);
+        }
     }
 }
 
@@ -280,10 +285,15 @@ void SceneValidator::checkLuaScript(const nlohmann::json& obj) {
 
     const auto path = obj["luaScript"].get<std::string>();
 
-    if (!path.empty() && !std::filesystem::exists(scene_directory_ / path)) {
-        addWarning(MessageCode::W_LUA_SCRIPT_NOT_FOUND,
-                   "Lua script file not found: " + (scene_directory_ / path).string(),
-                   obj);
+    if (!path.empty()) {
+        const bool found =
+            std::filesystem::exists(scene_directory_ / path) ||
+            std::filesystem::exists(scene_directory_.parent_path() / path);
+        if (!found) {
+            addWarning(MessageCode::W_LUA_SCRIPT_NOT_FOUND,
+                       "Lua script file not found: " + (scene_directory_ / path).string(),
+                       obj);
+        }
     }
 }
 
@@ -333,7 +343,17 @@ void SceneValidator::checkScripts(const nlohmann::json& scene_json) {
             continue;
         }
         const auto& script_path = entry.get<std::string>();
-        if (!script_path.empty() && !std::filesystem::exists(scene_directory_ / script_path)) {
+        if (script_path.empty()) {
+            continue;
+        }
+        // Try relative to scene file first, then relative to project root
+        // (one level above the scenes/ directory) so that paths like
+        // "scripts/nardi.lua" resolve correctly when the scene lives in
+        // "scenes/" and the scripts live in "scripts/" at the same level.
+        const bool found =
+            std::filesystem::exists(scene_directory_ / script_path) ||
+            std::filesystem::exists(scene_directory_.parent_path() / script_path);
+        if (!found) {
             addWarning(MessageCode::W_SCRIPT_FILE_NOT_FOUND,
                        "Script file not found: " + script_path,
                        scene_json);

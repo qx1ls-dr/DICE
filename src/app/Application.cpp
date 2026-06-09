@@ -8,7 +8,11 @@
 
 namespace dice {
 
-Application::Application() : view_(window_), controller_(model_, view_, lua_, window_, textures_) {
+Application::Application(const std::string& config_path)
+    : configPath_(config_path)
+    , view_(window_)
+    , controller_(model_, view_, lua_, window_, textures_)
+    , networkManager_(model_, actionManager_, lua_) {
     model_.setFactory(dice::scene::makeDefaultFactory());
 }
 
@@ -40,7 +44,7 @@ void Application::run(const std::string& start_scene) {
 }
 
 bool Application::init(const std::string& start_scene) {
-    config_ = loadConfig("game.json");
+    config_ = loadConfig(configPath_);
     if (!start_scene.empty()) {
         config_.startScene = start_scene;
     }
@@ -111,6 +115,26 @@ bool Application::init(const std::string& start_scene) {
         return false;
     }
 
+    // Network startup (optional — only if role is set in game.json)
+    const auto& net = config_.network;
+    if (net.role == "host") {
+        networkManager_.setUndoQuorum(static_cast<size_t>(net.undoQuorum));
+        if (!networkManager_.startHost(net.port)) {
+            spdlog::error("Failed to start host on port {}", net.port);
+            return false;
+        }
+        spdlog::info("Hosting on port {} — waiting for players, then call startGame()", net.port);
+        // Auto-start immediately (no lobby UI yet)
+        networkManager_.startGame();
+    } else if (net.role == "client") {
+        if (!networkManager_.joinGame(net.hostIp, net.port, net.playerName)) {
+            spdlog::error("Failed to connect to {}:{}", net.hostIp, net.port);
+            return false;
+        }
+        networkManager_.sendReady();
+        spdlog::info("Joined game at {}:{} as '{}'", net.hostIp, net.port, net.playerName);
+    }
+
     return true;
 }
 
@@ -131,6 +155,7 @@ void Application::handleEvents() {
 
 void Application::update(float dt) {
     controller_.update(dt);
+    networkManager_.update();
 }
 
 void Application::render() {
