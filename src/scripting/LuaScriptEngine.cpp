@@ -22,7 +22,7 @@ nlohmann::json luaTableToJson(const sol::table& t) {
     for (const auto& [k, v] : t) {
         if (k.get_type() != sol::type::number) { isArray = false; break; }
         int idx = static_cast<int>(k.as<double>());
-        if (idx != static_cast<int>(k.as<double>())) { isArray = false; break; }
+        if (static_cast<double>(idx) != k.as<double>()) { isArray = false; break; }
         maxIndex = std::max(maxIndex, idx);
     }
     if (isArray && maxIndex == static_cast<int>(t.size())) {
