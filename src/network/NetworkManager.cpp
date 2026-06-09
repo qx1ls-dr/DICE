@@ -118,6 +118,16 @@ bool NetworkManager::joinGame(const std::string& host_ip,
         }
     });
 
+    gameClient_->setOnStateReceived([this](const std::string& json_str) {
+        if (onStateReceivedLua_.valid()) {
+            auto res = onStateReceivedLua_(json_str);
+            if (!res.valid()) {
+                sol::error err = res;
+                spdlog::error("on_state_received callback error: {}", err.what());
+            }
+        }
+    });
+
     if (!gameClient_->connect(host_ip, port, player_name)) {
         gameClient_.reset();
         return false;
