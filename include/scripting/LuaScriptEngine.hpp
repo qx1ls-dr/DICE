@@ -106,8 +106,8 @@ public:
         }
         auto result = fn(std::forward<Args>(args)...);
         if (!result.valid()) {
-            const sol::error err{result};
-            spdlog::error("LuaScriptEngine::callGlobal '{}': {}", name, err.what());
+            const sol::error err = result;
+            spdlog::error("LuaScriptEngine: callGlobal '{}': {}", name, err.what());
         }
     }
 
@@ -117,8 +117,8 @@ public:
             return;
         auto result = fn(std::forward<Args>(args)...);
         if (!result.valid()) {
-            const sol::error err{result};
-            spdlog::error("LuaScriptEngine::callGlobalIfExists '{}': {}", name, err.what());
+            const sol::error err = result;
+            spdlog::error("LuaScriptEngine: callGlobalIfExists '{}': {}", name, err.what());
         }
     }
 

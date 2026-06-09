@@ -1,8 +1,9 @@
+#include <stdexcept>
+#include <string>
+
 #include "app/AppConfig.hpp"
 #include "app/Application.hpp"
 #include <spdlog/spdlog.h>
-#include <stdexcept>
-#include <string>
 
 namespace {
 uint16_t parsePort(const std::string& s) {
@@ -37,7 +38,7 @@ int main(int argc, char* argv[]) {
                 networkOverride.networkPort = parsePort(argv[++i]);
             } else if (arg == "--join" && i + 1 < argc) {
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-                std::string addr = argv[++i];
+                const std::string addr = argv[++i];
                 const auto colon = addr.find(':');
                 if (colon == std::string::npos || colon == 0) {
                     spdlog::error("--join requires IP:PORT format");

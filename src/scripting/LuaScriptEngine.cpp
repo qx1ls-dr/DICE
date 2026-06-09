@@ -16,6 +16,10 @@
 
 namespace {
 
+// NOLINTNEXTLINE(misc-no-recursion)
+nlohmann::json luaValueToJson(const sol::object& val);
+
+// NOLINTNEXTLINE(misc-no-recursion)
 nlohmann::json luaTableToJson(const sol::table& t) {
     bool isArray = true;
     int maxIndex = 0;
@@ -24,7 +28,7 @@ nlohmann::json luaTableToJson(const sol::table& t) {
             isArray = false;
             break;
         }
-        int idx = static_cast<int>(k.as<double>());
+        const int idx = static_cast<int>(k.as<double>());
         if (static_cast<double>(idx) != k.as<double>()) {
             isArray = false;
             break;
@@ -34,75 +38,78 @@ nlohmann::json luaTableToJson(const sol::table& t) {
     if (isArray && maxIndex == static_cast<int>(t.size())) {
         nlohmann::json arr = nlohmann::json::array();
         for (int i = 1; i <= maxIndex; ++i) {
-            sol::object val = t[i];
-            if (val.get_type() == sol::type::table)
-                arr.push_back(luaTableToJson(val.as<sol::table>()));
-            else if (val.get_type() == sol::type::string)
-                arr.push_back(val.as<std::string>());
-            else if (val.get_type() == sol::type::number)
-                arr.push_back(val.as<double>());
-            else if (val.get_type() == sol::type::boolean)
-                arr.push_back(val.as<bool>());
-            else
-                arr.push_back(nullptr);
+            const sol::object val = t[i];
+            arr.push_back(luaValueToJson(val));
         }
         return arr;
     }
     nlohmann::json obj = nlohmann::json::object();
     for (const auto& [k, v] : t) {
         std::string key;
-        if (k.get_type() == sol::type::string)
+        if (k.get_type() == sol::type::string) {
             key = k.as<std::string>();
-        else if (k.get_type() == sol::type::number)
+        } else if (k.get_type() == sol::type::number) {
             key = std::to_string(static_cast<int>(k.as<double>()));
-        else
+        } else {
             continue;
-        if (v.get_type() == sol::type::table)
-            obj[key] = luaTableToJson(v.as<sol::table>());
-        else if (v.get_type() == sol::type::string)
-            obj[key] = v.as<std::string>();
-        else if (v.get_type() == sol::type::number)
-            obj[key] = v.as<double>();
-        else if (v.get_type() == sol::type::boolean)
-            obj[key] = v.as<bool>();
-        else
-            obj[key] = nullptr;
+        }
+        obj[key] = luaValueToJson(v);
     }
     return obj;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
+nlohmann::json luaValueToJson(const sol::object& val) {
+    if (val.get_type() == sol::type::table) {
+        return luaTableToJson(val.as<sol::table>());
+    }
+    if (val.get_type() == sol::type::string) {
+        return val.as<std::string>();
+    }
+    if (val.get_type() == sol::type::number) {
+        return val.as<double>();
+    }
+    if (val.get_type() == sol::type::boolean) {
+        return val.as<bool>();
+    }
+    return nullptr;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
 sol::table jsonToLuaTable(const nlohmann::json& j, sol::state& lua) {
     sol::table t = lua.create_table();
     if (j.is_array()) {
         int idx = 1;
         for (const auto& elem : j) {
-            if (elem.is_object() || elem.is_array())
+            if (elem.is_object() || elem.is_array()) {
                 t[idx++] = jsonToLuaTable(elem, lua);
-            else if (elem.is_string())
+            } else if (elem.is_string()) {
                 t[idx++] = elem.get<std::string>();
-            else if (elem.is_number_float())
+            } else if (elem.is_number_float()) {
                 t[idx++] = elem.get<double>();
-            else if (elem.is_number())
+            } else if (elem.is_number()) {
                 t[idx++] = elem.get<int>();
-            else if (elem.is_boolean())
+            } else if (elem.is_boolean()) {
                 t[idx++] = elem.get<bool>();
-            else
+            } else {
                 t[idx++] = sol::lua_nil;
+            }
         }
     } else if (j.is_object()) {
         for (const auto& [key, val] : j.items()) {
-            if (val.is_object() || val.is_array())
+            if (val.is_object() || val.is_array()) {
                 t[key] = jsonToLuaTable(val, lua);
-            else if (val.is_string())
+            } else if (val.is_string()) {
                 t[key] = val.get<std::string>();
-            else if (val.is_number_float())
+            } else if (val.is_number_float()) {
                 t[key] = val.get<double>();
-            else if (val.is_number())
+            } else if (val.is_number()) {
                 t[key] = val.get<int>();
-            else if (val.is_boolean())
+            } else if (val.is_boolean()) {
                 t[key] = val.get<bool>();
-            else
+            } else {
                 t[key] = sol::lua_nil;
+            }
         }
     }
     return t;
@@ -370,8 +377,9 @@ void LuaScriptEngine::registerStandardCallbacks() {
             it->second(message);
         }
     });
-    lua_.set_function("json_encode",
-                      [this](sol::table t) -> std::string { return luaTableToJson(t).dump(); });
+    lua_.set_function("json_encode", [this](const sol::table& t) -> std::string {
+        return luaTableToJson(t).dump();
+    });
     lua_.set_function("json_decode", [this](const std::string& s) -> sol::table {
         try {
             return jsonToLuaTable(nlohmann::json::parse(s), lua_);

@@ -122,7 +122,7 @@ bool NetworkManager::joinGame(const std::string& host_ip,
         if (onStateReceivedLua_.valid()) {
             auto res = onStateReceivedLua_(json_str);
             if (!res.valid()) {
-                sol::error err = res;
+                const sol::error err = res;
                 spdlog::error("on_state_received callback error: {}", err.what());
             }
         }
@@ -272,10 +272,12 @@ void NetworkManager::registerLuaBindings() {
         "send_move", [this](const std::string& id, float x, float y) { sendMoveObject(id, x, y); });
 
     lua_.registerFunction("get_my_player", [this]() -> int {
-        if (role_ == NetworkRole::Host)
+        if (role_ == NetworkRole::Host) {
             return 1;
-        if (role_ == NetworkRole::Client)
+        }
+        if (role_ == NetworkRole::Client) {
             return 2;
+        }
         return 0;
     });
 
@@ -292,13 +294,13 @@ void NetworkManager::registerLuaBindings() {
     });
 
     lua_.registerFunction("on_state_received", [this](sol::protected_function fn) {
-        onStateReceivedLua_ = fn;
+        onStateReceivedLua_ = std::move(fn);
         if (gameClient_) {
             gameClient_->setOnStateReceived([this](const std::string& json_str) {
                 if (onStateReceivedLua_.valid()) {
                     auto res = onStateReceivedLua_(json_str);
                     if (!res.valid()) {
-                        sol::error err = res;
+                        const sol::error err = res;
                         spdlog::error("on_state_received callback error: {}", err.what());
                     }
                 }

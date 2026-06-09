@@ -83,7 +83,7 @@ TEST_F(ConfigLoaderTest, EmptyGlobalScriptIsIgnored) {
 }
 
 TEST(AppConfigTest, NetworkFieldsDefaultEmpty) {
-    dice::AppConfig cfg;
+    const dice::AppConfig cfg;
     EXPECT_EQ(cfg.networkRole, "");
     EXPECT_EQ(cfg.networkHost, "");
     EXPECT_EQ(cfg.networkPort, 7777);
