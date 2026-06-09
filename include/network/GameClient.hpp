@@ -61,6 +61,7 @@ public:
     void setOnGameStarted(std::function<void()> handler);
     void setOnChatReceived(
         std::function<void(const std::string& fromId, const std::string& text)> handler);
+    void setOnStateReceived(std::function<void(const std::string&)> handler);
 
 private:
     void receiveLoop();
@@ -98,6 +99,7 @@ private:
     std::function<void(const std::string&)> onPlayerReady_;
     std::function<void()> onGameStarted_;
     std::function<void(const std::string&, const std::string&)> onChatReceived_;
+    std::function<void(const std::string&)> onStateReceived_;
 };
 
 } // namespace dice::network
