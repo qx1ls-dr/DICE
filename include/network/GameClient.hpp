@@ -23,11 +23,7 @@ public:
     GameClient();
     ~GameClient();
 
-<<<<<<< HEAD
-    bool connect(const std::string& hostIp, uint16_t port, const std::string& playerName);
-=======
     bool connect(const std::string& host_ip, uint16_t port, const std::string& player_name);
->>>>>>> main
     void disconnect();
     bool isConnected() const {
         return isConnected_;
@@ -40,13 +36,8 @@ public:
         return clientId_;
     }
 
-<<<<<<< HEAD
-    void sendEvent(const std::string& objectId, const std::string& eventName);
-    void sendMoveObject(const std::string& objectId, float x, float y);
-=======
     void sendEvent(const std::string& object_id, const std::string& event_name);
     void sendMoveObject(const std::string& object_id, float x, float y);
->>>>>>> main
     void sendReady();
     void sendChat(const std::string& text);
 
@@ -70,24 +61,13 @@ public:
     void setOnGameStarted(std::function<void()> handler);
     void setOnChatReceived(
         std::function<void(const std::string& fromId, const std::string& text)> handler);
-<<<<<<< HEAD
     void setOnActionRejected(std::function<void(const std::string& reason)> handler);
-=======
->>>>>>> main
 
 private:
     void receiveLoop();
     void handleMessage(const NetworkMessage& msg);
     void send(const NetworkMessage& msg);
 
-<<<<<<< HEAD
-    void applyEvent(const std::string& objectId, const std::string& eventName);
-    void applyMoveObject(const std::string& objectId, float x, float y);
-    void applySnapshot(const nlohmann::json& state);
-
-    sf::TcpSocket socket_;
-    std::string clientId_;
-=======
     void applyEvent(const std::string& object_id, const std::string& event_name);
     void applyMoveObject(const std::string& object_id, float x, float y);
     void applySnapshot(const nlohmann::json& state);
@@ -98,16 +78,12 @@ private:
     std::mutex socketMutex_;
     std::string clientId_;
     std::mutex clientIdMutex_;
->>>>>>> main
     std::string serverIp_;
     uint16_t serverPort_ = 0;
 
     std::atomic<bool> isConnected_{false};
     std::atomic<bool> gameStarted_{false};
-<<<<<<< HEAD
-=======
     std::chrono::steady_clock::time_point lastPingTime_;
->>>>>>> main
 
     std::thread receiveThread_;
     std::atomic<bool> running_{false};
@@ -123,10 +99,7 @@ private:
     std::function<void(const std::string&)> onPlayerReady_;
     std::function<void()> onGameStarted_;
     std::function<void(const std::string&, const std::string&)> onChatReceived_;
-<<<<<<< HEAD
     std::function<void(const std::string&)> onActionRejected_;
-=======
->>>>>>> main
 };
 
 } // namespace dice::network
