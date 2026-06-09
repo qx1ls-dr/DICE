@@ -14,6 +14,96 @@
 #include "scripting/LuaScript.hpp"
 #include <spdlog/spdlog.h>
 
+namespace {
+
+nlohmann::json luaTableToJson(const sol::table& t) {
+    bool isArray = true;
+    int maxIndex = 0;
+    for (const auto& [k, v] : t) {
+        if (k.get_type() != sol::type::number) { isArray = false; break; }
+        int idx = static_cast<int>(k.as<double>());
+        if (idx != static_cast<int>(k.as<double>())) { isArray = false; break; }
+        maxIndex = std::max(maxIndex, idx);
+    }
+    if (isArray && maxIndex == static_cast<int>(t.size())) {
+        nlohmann::json arr = nlohmann::json::array();
+        for (int i = 1; i <= maxIndex; ++i) {
+            sol::object val = t[i];
+            if (val.get_type() == sol::type::table)
+                arr.push_back(luaTableToJson(val.as<sol::table>()));
+            else if (val.get_type() == sol::type::string)
+                arr.push_back(val.as<std::string>());
+            else if (val.get_type() == sol::type::number)
+                arr.push_back(val.as<double>());
+            else if (val.get_type() == sol::type::boolean)
+                arr.push_back(val.as<bool>());
+            else
+                arr.push_back(nullptr);
+        }
+        return arr;
+    }
+    nlohmann::json obj = nlohmann::json::object();
+    for (const auto& [k, v] : t) {
+        std::string key;
+        if (k.get_type() == sol::type::string)
+            key = k.as<std::string>();
+        else if (k.get_type() == sol::type::number)
+            key = std::to_string(static_cast<int>(k.as<double>()));
+        else
+            continue;
+        if (v.get_type() == sol::type::table)
+            obj[key] = luaTableToJson(v.as<sol::table>());
+        else if (v.get_type() == sol::type::string)
+            obj[key] = v.as<std::string>();
+        else if (v.get_type() == sol::type::number)
+            obj[key] = v.as<double>();
+        else if (v.get_type() == sol::type::boolean)
+            obj[key] = v.as<bool>();
+        else
+            obj[key] = nullptr;
+    }
+    return obj;
+}
+
+sol::table jsonToLuaTable(const nlohmann::json& j, sol::state& lua) {
+    sol::table t = lua.create_table();
+    if (j.is_array()) {
+        int idx = 1;
+        for (const auto& elem : j) {
+            if (elem.is_object() || elem.is_array())
+                t[idx++] = jsonToLuaTable(elem, lua);
+            else if (elem.is_string())
+                t[idx++] = elem.get<std::string>();
+            else if (elem.is_number_float())
+                t[idx++] = elem.get<double>();
+            else if (elem.is_number())
+                t[idx++] = elem.get<int>();
+            else if (elem.is_boolean())
+                t[idx++] = elem.get<bool>();
+            else
+                t[idx++] = sol::lua_nil;
+        }
+    } else if (j.is_object()) {
+        for (const auto& [key, val] : j.items()) {
+            if (val.is_object() || val.is_array())
+                t[key] = jsonToLuaTable(val, lua);
+            else if (val.is_string())
+                t[key] = val.get<std::string>();
+            else if (val.is_number_float())
+                t[key] = val.get<double>();
+            else if (val.is_number())
+                t[key] = val.get<int>();
+            else if (val.is_boolean())
+                t[key] = val.get<bool>();
+            else
+                t[key] = sol::lua_nil;
+        }
+    }
+    return t;
+}
+
+} // anonymous namespace
+
 namespace dice::scripting {
 
 void* LuaScriptEngine::guardedAlloc(void* ud, void* ptr, size_t osize, size_t nsize) {
@@ -272,6 +362,16 @@ void LuaScriptEngine::registerStandardCallbacks() {
         spdlog::info("[Lua] {}", message);
         if (auto it = callbacks_.find("cpp_log"); it != callbacks_.end()) {
             it->second(message);
+        }
+    });
+    lua_.set_function("json_encode", [this](sol::table t) -> std::string {
+        return luaTableToJson(t).dump();
+    });
+    lua_.set_function("json_decode", [this](const std::string& s) -> sol::table {
+        try {
+            return jsonToLuaTable(nlohmann::json::parse(s), lua_);
+        } catch (...) {
+            return lua_.create_table();
         }
     });
 }
