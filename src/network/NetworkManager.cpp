@@ -272,8 +272,10 @@ void NetworkManager::registerLuaBindings() {
         "send_move", [this](const std::string& id, float x, float y) { sendMoveObject(id, x, y); });
 
     lua_.registerFunction("get_my_player", [this]() -> int {
-        if (role_ == NetworkRole::Host)   return 1;
-        if (role_ == NetworkRole::Client) return 2;
+        if (role_ == NetworkRole::Host)
+            return 1;
+        if (role_ == NetworkRole::Client)
+            return 2;
         return 0;
     });
 
