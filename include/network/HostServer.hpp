@@ -1,6 +1,7 @@
 #ifndef DICE_NETWORK_HOST_SERVER_HPP
 #define DICE_NETWORK_HOST_SERVER_HPP
 
+#include <atomic>
 #include <filesystem>
 #include <functional>
 #include <memory>
@@ -21,10 +22,16 @@
 
 namespace dice::network {
 
+struct ClientContext {
+    std::unique_ptr<sf::TcpSocket> socket;
+    ClientInfo info;
+    MessageBuffer receiveBuffer;
+};
+
 class HostServer {
 public:
     HostServer(core::Model& model,
-               core::ActionManager& actionManager,
+               core::ActionManager& action_manager,
                scripting::LuaScriptEngine& lua);
     ~HostServer();
 
@@ -33,19 +40,26 @@ public:
     bool isRunning() const {
         return isRunning_;
     }
+    bool isGameStarted() const {
+        return gameStarted_;
+    }
 
-    std::string getLocalIp() const;
+    static std::string getLocalIp();
     uint16_t getPort() const {
         return port_;
     }
     std::vector<ClientInfo> getClients() const;
     size_t getClientCount() const {
+        const std::lock_guard<std::mutex> lock(clientsMutex_);
         return clients_.size();
     }
 
     void startGame();
-    void kickClient(const std::string& clientId);
+    void kickClient(const std::string& client_id);
     void sendChat(const std::string& text);
+
+    void broadcastMoveObject(const std::string& object_id, float x, float y);
+    void broadcastEvent(const std::string& object_id, const std::string& event_name);
 
     void update();
 
@@ -58,10 +72,10 @@ public:
 private:
     void serverLoop();
     void acceptNewClients();
-    void receiveFromClient(sf::TcpSocket& socket, const std::string& clientId);
-    void sendToClient(const std::string& clientId, const NetworkMessage& msg);
-    void broadcast(const NetworkMessage& msg, const std::string& excludeId = "");
-    void removeClient(const std::string& clientId);
+    void receiveFromClient(const std::string& client_id);
+    void sendToClient(const std::string& client_id, const NetworkMessage& msg);
+    void broadcast(const NetworkMessage& msg, const std::string& exclude_id = "");
+    void removeClient(const std::string& client_id);
     void checkTimeouts();
     void broadcastSnapshot();
 
@@ -72,23 +86,23 @@ private:
     void handleChat(const NetworkMessage& msg);
     void handlePing(const NetworkMessage& msg);
 
-    bool isEventAllowedForClient(const std::string& eventName, const std::string& clientId);
+    bool isEventAllowedForClient(const std::string& event_name);
 
-    std::string generateId();
+    static std::string generateId();
 
     core::Model& model_;
     core::ActionManager& actionManager_;
     scripting::LuaScriptEngine& lua_;
+
     std::unique_ptr<core::ActionValidator> actionValidator_;
     uint32_t nextActionSeq_ = 1;
 
     sf::TcpListener listener_;
-    std::unordered_map<std::string, std::unique_ptr<sf::TcpSocket>> clients_;
-    std::unordered_map<std::string, ClientInfo> clientInfos_;
+    std::unordered_map<std::string, std::shared_ptr<ClientContext>> clients_;
 
     uint16_t port_ = 0;
-    bool isRunning_ = false;
-    bool gameStarted_ = false;
+    std::atomic<bool> isRunning_{false};
+    std::atomic<bool> gameStarted_{false};
 
     std::thread serverThread_;
     mutable std::mutex clientsMutex_;

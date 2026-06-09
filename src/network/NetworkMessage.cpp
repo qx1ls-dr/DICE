@@ -2,6 +2,8 @@
 
 #include <chrono>
 
+#include <spdlog/spdlog.h>
+
 namespace dice::network {
 
 std::vector<uint8_t> NetworkMessage::serialize() const {
@@ -12,51 +14,66 @@ std::vector<uint8_t> NetworkMessage::serialize() const {
     json["from"] = fromId;
     json["data"] = data;
 
-    std::string str = json.dump();
-    return std::vector<uint8_t>(str.begin(), str.end());
+    std::string jsonStr = json.dump();
+    const auto length = static_cast<uint32_t>(jsonStr.size());
+
+    std::vector<uint8_t> result;
+    result.reserve(4 + length);
+
+    result.push_back(static_cast<uint8_t>((length >> 24) & 0xFF));
+    result.push_back(static_cast<uint8_t>((length >> 16) & 0xFF));
+    result.push_back(static_cast<uint8_t>((length >> 8) & 0xFF));
+    result.push_back(static_cast<uint8_t>(length & 0xFF));
+
+    result.insert(result.end(), jsonStr.begin(), jsonStr.end());
+
+    return result;
 }
 
 NetworkMessage NetworkMessage::deserialize(const std::vector<uint8_t>& data) {
     NetworkMessage msg;
+    msg.type = MessageType::Invalid;
+
     try {
-        std::string str(data.begin(), data.end());
-        nlohmann::json json = nlohmann::json::parse(str);
+        const std::string jsonStr(data.begin(), data.end());
+        const nlohmann::json json = nlohmann::json::parse(jsonStr);
 
         msg.type = static_cast<MessageType>(json.value("type", 0));
         msg.sequenceId = json.value("seq", 0);
         msg.timestamp = json.value("ts", 0);
         msg.fromId = json.value("from", "");
         msg.data = json.value("data", nlohmann::json::object());
+    } catch (const nlohmann::json::parse_error& e) {
+        spdlog::error("JSON parse error: {}", e.what());
     } catch (const std::exception& e) {
-        msg.type = MessageType::Disconnect;
+        spdlog::error("Deserialize error: {}", e.what());
     }
+
     return msg;
 }
 
-NetworkMessage NetworkMessage::createHandshake(const std::string& playerName,
-                                               const std::string& scriptsVersion) {
+NetworkMessage NetworkMessage::createHandshake(const std::string& player_name) {
     NetworkMessage msg;
     msg.type = MessageType::Handshake;
-    msg.data["playerName"] = playerName;
-    msg.data["scriptsVersion"] = scriptsVersion;
+    msg.data["playerName"] = player_name;
     msg.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
                         std::chrono::system_clock::now().time_since_epoch())
                         .count();
     return msg;
 }
 
-NetworkMessage NetworkMessage::createHandshakeAck(const std::string& clientId, bool gameStarted) {
+NetworkMessage NetworkMessage::createHandshakeAck(const std::string& client_id, bool game_started) {
     NetworkMessage msg;
     msg.type = MessageType::HandshakeAck;
-    msg.data["clientId"] = clientId;
-    msg.data["gameStarted"] = gameStarted;
+    msg.data["clientId"] = client_id;
+    msg.data["gameStarted"] = game_started;
     return msg;
 }
 
-NetworkMessage NetworkMessage::createPlayerReady(const std::string& playerId) {
+NetworkMessage NetworkMessage::createPlayerReady(const std::string& player_id) {
     NetworkMessage msg;
     msg.type = MessageType::PlayerReady;
-    msg.fromId = playerId;
+    msg.fromId = player_id;
     return msg;
 }
 
@@ -73,19 +90,19 @@ NetworkMessage NetworkMessage::createSnapshot(const nlohmann::json& state) {
     return msg;
 }
 
-NetworkMessage NetworkMessage::createEvent(const std::string& objectId,
-                                           const std::string& eventName) {
+NetworkMessage NetworkMessage::createEvent(const std::string& object_id,
+                                           const std::string& event_name) {
     NetworkMessage msg;
     msg.type = MessageType::Event;
-    msg.data["object_id"] = objectId;
-    msg.data["event"] = eventName;
+    msg.data["object_id"] = object_id;
+    msg.data["event"] = event_name;
     return msg;
 }
 
-NetworkMessage NetworkMessage::createMoveObject(const std::string& objectId, float x, float y) {
+NetworkMessage NetworkMessage::createMoveObject(const std::string& object_id, float x, float y) {
     NetworkMessage msg;
     msg.type = MessageType::MoveObject;
-    msg.data["objectId"] = objectId;
+    msg.data["objectId"] = object_id;
     msg.data["x"] = x;
     msg.data["y"] = y;
     return msg;
@@ -123,20 +140,20 @@ NetworkMessage NetworkMessage::createPong() {
     return msg;
 }
 
-NetworkMessage NetworkMessage::createPlayerJoined(const std::string& playerId,
-                                                  const std::string& playerName) {
+NetworkMessage NetworkMessage::createPlayerJoined(const std::string& player_id,
+                                                  const std::string& player_name) {
     NetworkMessage msg;
     msg.type = MessageType::PlayerJoined;
-    msg.fromId = playerId;
-    msg.data["name"] = playerName;
+    msg.fromId = player_id;
+    msg.data["name"] = player_name;
     msg.data["status"] = static_cast<uint8_t>(PlayerStatus::Connected);
     return msg;
 }
 
-NetworkMessage NetworkMessage::createPlayerLeft(const std::string& playerId) {
+NetworkMessage NetworkMessage::createPlayerLeft(const std::string& player_id) {
     NetworkMessage msg;
     msg.type = MessageType::PlayerLeft;
-    msg.fromId = playerId;
+    msg.fromId = player_id;
     return msg;
 }
 
@@ -150,7 +167,7 @@ NetworkMessage NetworkMessage::createDisconnect(const std::string& reason) {
 }
 
 bool NetworkMessage::isValid() const {
-    return type != MessageType::Disconnect;
+    return type != MessageType::Disconnect && type != MessageType::Invalid;
 }
 
 std::string NetworkMessage::toString() const {
