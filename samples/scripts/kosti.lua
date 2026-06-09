@@ -1,6 +1,11 @@
--- scripts/game.lua
--- Game state and logic for the DICE demo.
--- Loaded once per scene via "scripts" array in demo.json.
+-- scripts/kosti.lua
+-- Игра в кости — одиночная и сетевая (хост-авторитативная модель)
+
+-- Разрешаем триггеры от клиента
+network_allow_event("roll_dice")
+network_allow_event("end_turn")
+
+local myPlayer = get_my_player()  -- 1=хост, 2=клиент, 0=одиночная
 
 game = {
     currentPlayer = 1,
@@ -12,34 +17,58 @@ game = {
     targetScore   = 21
 }
 
--- ===== Trigger catalog =====
+-- ===== Приём состояния от хоста (только клиент) =====
+
+on_state_received(function(json_str)
+    game = json_decode(json_str)
+end)
+
+-- ===== Триггеры =====
 
 engine.trigger("roll_dice", function(self)
     local player = self:getIntProperty("player", 0)
-    if game.gameOver or game.hasRolled or game.currentPlayer ~= player then
+    if game.gameOver or game.hasRolled then return end
+    if game.currentPlayer ~= player then return end
+
+    -- Клиент пересылает действие хосту
+    if is_client() then
+        send_event(self:getId(), "roll_dice")
         return
     end
+
+    -- Хост (или одиночная игра) выполняет бросок
     local roll = cpp_rand(1, 6)
     game.diceRoll[player]  = roll
     game.scores[player]    = game.scores[player] + roll
     game.hasRolled         = true
     cpp_log("Игрок " .. player .. " бросил " .. roll ..
             " — итого: " .. game.scores[player])
+
     if game.scores[player] >= game.targetScore then
         game.gameOver = true
         game.winner   = player
         cpp_log("Игрок " .. player .. " победил!")
     end
+
+    if is_host() then send_state(json_encode(game)) end
 end)
 
 engine.trigger("end_turn", function(self)
     if game.gameOver or not game.hasRolled then return end
+
+    if is_client() then
+        send_event(self:getId(), "end_turn")
+        return
+    end
+
     game.currentPlayer = game.currentPlayer == 1 and 2 or 1
     game.hasRolled     = false
     cpp_log("Ход передан Игроку " .. game.currentPlayer)
+
+    if is_host() then send_state(json_encode(game)) end
 end)
 
--- ===== Keyboard =====
+-- ===== Клавиатура =====
 
 engine.onKey("R", function()
     engine.reloadScene()
@@ -58,7 +87,10 @@ function update(dt)
         if roll > 0 then
             cpp_set_obj_texture(obj:getId(), "assets/" .. prefix .. roll .. ".png")
         end
-        if game.currentPlayer == player and not game.hasRolled and not game.gameOver then
+        -- В сетевом режиме блокируем чужой кубик
+        local isMyTurn = (game.currentPlayer == player)
+        local isMyDie  = (myPlayer == 0 or myPlayer == player)
+        if isMyTurn and not game.hasRolled and not game.gameOver and isMyDie then
             obj:setColor(255, 255, 255, 255)
         else
             obj:setColor(160, 150, 130, 180)
@@ -93,6 +125,12 @@ function draw()
         cpp_draw_text_center(
             ">>> Ход Игрока " .. game.currentPlayer .. " <<<",
             640, 22, 26, table.unpack(cur))
+    end
+
+    -- Подсказка роли
+    if myPlayer > 0 then
+        local roleText = myPlayer == 1 and "Вы: Игрок 1 (хост)" or "Вы: Игрок 2 (клиент)"
+        cpp_draw_text_center(roleText, 640, 50, 16, 160, 160, 160)
     end
 
     local btnColor = (game.hasRolled and not game.gameOver)
