@@ -28,6 +28,7 @@ enum class MessageType : uint8_t {
     Event,
     MoveObject,
     Chat,
+    State,      // game state broadcast
     Invalid = 255
 };
 
@@ -65,6 +66,7 @@ struct NetworkMessage {
     static NetworkMessage createEvent(const std::string& object_id, const std::string& event_name);
     static NetworkMessage createMoveObject(const std::string& object_id, float x, float y);
     static NetworkMessage createChat(const std::string& text);
+    static NetworkMessage createState(const std::string& json_str);
     static NetworkMessage createPing();
     static NetworkMessage createPong();
     static NetworkMessage createPlayerJoined(const std::string& player_id,

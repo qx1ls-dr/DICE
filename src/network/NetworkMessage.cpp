@@ -35,7 +35,21 @@ NetworkMessage NetworkMessage::deserialize(const std::vector<uint8_t>& data) {
     msg.type = MessageType::Invalid;
 
     try {
-        const std::string jsonStr(data.begin(), data.end());
+        // Support both framed (4-byte length prefix) and raw JSON input.
+        // serialize() produces framed output; raw JSON starts with '{'.
+        const auto* begin = data.data();
+        std::size_t size = data.size();
+        if (size >= 4 && begin[0] != '{') {
+            uint32_t msgLength = (static_cast<uint32_t>(begin[0]) << 24) |
+                                 (static_cast<uint32_t>(begin[1]) << 16) |
+                                 (static_cast<uint32_t>(begin[2]) << 8) |
+                                  static_cast<uint32_t>(begin[3]);
+            if (size == 4 + msgLength) {
+                begin += 4;
+                size = msgLength;
+            }
+        }
+        const std::string jsonStr(begin, begin + size);
         const nlohmann::json json = nlohmann::json::parse(jsonStr);
 
         msg.type = static_cast<MessageType>(json.value("type", 0));
@@ -112,6 +126,13 @@ NetworkMessage NetworkMessage::createChat(const std::string& text) {
     NetworkMessage msg;
     msg.type = MessageType::Chat;
     msg.data["text"] = text;
+    return msg;
+}
+
+NetworkMessage NetworkMessage::createState(const std::string& json_str) {
+    NetworkMessage msg;
+    msg.type = MessageType::State;
+    msg.data["payload"] = json_str;
     return msg;
 }
 
@@ -204,6 +225,9 @@ std::string NetworkMessage::toString() const {
             break;
         case MessageType::Chat:
             str += "Chat";
+            break;
+        case MessageType::State:
+            str += "State";
             break;
         default:
             str += "Unknown";

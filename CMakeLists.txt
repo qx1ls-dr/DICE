@@ -303,6 +303,20 @@ target_link_libraries(dice_controller_tests
 )
 gtest_discover_tests(dice_controller_tests)
 
+add_executable(dice_network_tests
+  tests/network/test_NetworkMessage.cpp
+)
+target_include_directories(dice_network_tests
+  PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+)
+target_link_libraries(dice_network_tests
+  PRIVATE
+    dice_network
+    GTest::gtest_main
+)
+gtest_discover_tests(dice_network_tests)
+
 add_custom_command(TARGET dice_scripting_tests POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
   ${CMAKE_SOURCE_DIR}/tests/fixtures
