@@ -8,8 +8,10 @@
 
 #include "app/AppConfig.hpp"
 #include "controller/Controller.hpp"
+#include "core/ActionManager.hpp"
 #include "core/Model.hpp"
 #include "core/ResourceManager.hpp"
+#include "network/NetworkManager.hpp"
 #include "scripting/LuaScriptEngine.hpp"
 #include "ui/View.hpp"
 
@@ -25,10 +27,10 @@ public:
     Application(Application&&) = delete;
     Application& operator=(Application&&) = delete;
 
-    void run(const std::string& start_scene = {});
+    void run(const std::string& start_scene = {}, const AppConfig& network_override = {});
 
 private:
-    bool init(const std::string& start_scene);
+    bool init(const std::string& start_scene, const AppConfig& network_override);
     void handleEvents();
     void update(float dt);
     void render();
@@ -41,9 +43,11 @@ private:
     core::ResourceManager<sf::Font> fonts_;
 
     core::Model model_;
+    core::ActionManager actionManager_;
     view::View view_;
     scripting::LuaScriptEngine lua_;
     controller::Controller controller_;
+    network::NetworkManager networkManager_;
 
     bool running_ = false;
     sf::Clock clock_;

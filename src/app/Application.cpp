@@ -8,7 +8,10 @@
 
 namespace dice {
 
-Application::Application() : view_(window_), controller_(model_, view_, lua_, window_, textures_) {
+Application::Application()
+    : view_(window_),
+      controller_(model_, view_, lua_, window_, textures_),
+      networkManager_(model_, actionManager_, lua_) {
     model_.setFactory(dice::scene::makeDefaultFactory());
 }
 
@@ -16,8 +19,8 @@ Application::~Application() {
     shutdown();
 }
 
-void Application::run(const std::string& start_scene) {
-    if (!init(start_scene)) {
+void Application::run(const std::string& start_scene, const AppConfig& network_override) {
+    if (!init(start_scene, network_override)) {
         spdlog::critical("Failed to initialize application");
         return;
     }
@@ -39,10 +42,16 @@ void Application::run(const std::string& start_scene) {
     spdlog::info("=== DICE Application Stopped ===");
 }
 
-bool Application::init(const std::string& start_scene) {
+bool Application::init(const std::string& start_scene, const AppConfig& network_override) {
     config_ = loadConfig("game.json");
     if (!start_scene.empty()) {
         config_.startScene = start_scene;
+    }
+    // Apply network CLI overrides
+    config_.networkRole = network_override.networkRole;
+    config_.networkHost = network_override.networkHost;
+    if (!network_override.networkRole.empty()) {
+        config_.networkPort = network_override.networkPort;
     }
 
     // Window Setup
@@ -111,6 +120,26 @@ bool Application::init(const std::string& start_scene) {
         return false;
     }
 
+    // Network setup
+    if (config_.networkRole == "host") {
+        spdlog::info("Starting as host on port {}", config_.networkPort);
+        networkManager_.setOnPlayerJoined([this](const network::ClientInfo&) {
+            if (!networkManager_.isGameStarted()) {
+                networkManager_.startGame();
+            }
+        });
+        if (!networkManager_.startHost(config_.networkPort)) {
+            spdlog::error("Failed to start host on port {}", config_.networkPort);
+            return false;
+        }
+    } else if (config_.networkRole == "client") {
+        spdlog::info("Connecting to {}:{}", config_.networkHost, config_.networkPort);
+        if (!networkManager_.joinGame(config_.networkHost, config_.networkPort, "Player2")) {
+            spdlog::error("Failed to connect to {}:{}", config_.networkHost, config_.networkPort);
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -131,6 +160,7 @@ void Application::handleEvents() {
 
 void Application::update(float dt) {
     controller_.update(dt);
+    networkManager_.update();
 }
 
 void Application::render() {

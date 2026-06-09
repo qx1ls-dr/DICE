@@ -158,25 +158,6 @@ else()
 endif()
 
 # ----------------------------
-# Controller library
-# ----------------------------
-add_library(dice_controller STATIC
-  src/controller/Controller.cpp
-  src/app/Application.cpp
-  src/app/ConfigLoader.cpp
-)
-
-target_include_directories(dice_controller
-  PUBLIC
-    ${CMAKE_SOURCE_DIR}/include
-)
-
-target_link_libraries(dice_controller
-  PUBLIC
-    dice_scripting
-)
-
-# ----------------------------
 # Network library
 # ----------------------------
 add_library(dice_network STATIC
@@ -198,6 +179,26 @@ target_link_libraries(dice_network
     sfml-network
     nlohmann_json::nlohmann_json
     spdlog::spdlog
+)
+
+# ----------------------------
+# Controller library
+# ----------------------------
+add_library(dice_controller STATIC
+  src/controller/Controller.cpp
+  src/app/Application.cpp
+  src/app/ConfigLoader.cpp
+)
+
+target_include_directories(dice_controller
+  PUBLIC
+    ${CMAKE_SOURCE_DIR}/include
+)
+
+target_link_libraries(dice_controller
+  PUBLIC
+    dice_scripting
+    dice_network
 )
 
 # ----------------------------
