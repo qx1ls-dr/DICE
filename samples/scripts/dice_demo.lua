@@ -116,3 +116,83 @@ function draw()
             640, 450, 24, 180, 180, 180)
     end
 end
+
+
+-- ============================================================
+-- Network / ActionValidator hooks
+-- ============================================================
+-- ActionValidator calls these functions when a GameAction is
+-- received from a client (or the local host) via HostServer.
+--
+-- Supported action types:
+--   "roll_dice"  payload: { player = int }
+--   "end_turn"   payload: { player = int }
+-- ============================================================
+ 
+--- Checks whether an action is permitted.
+--- Called BEFORE the game state is modified.
+--- @param player_id string  network identifier of the client
+--- @param payload table  JSON fields of the action
+--- @return bool, string  true — allow; false, reason — reject
+
+
+function validate_action(player_id, action_type, payload)
+    if game.gameOver then
+        return false, "игра уже завершена"
+    end
+
+    if action_type == "roll_dice" then
+        local player = payload.player or 0
+        if player ~= game.currentPlayer then
+            return false, "сейчас не ваш ход (текущий игрок: " .. game.currentPlayer .. ")"
+        end
+        if game.hasRolled then
+            return false, "кубик в этом ходу уже брошен"
+        end
+        return true
+
+    elseif action_type == "end_turn" then
+        local player = payload.player or 0
+        if player ~= game.currentPlayer then
+            return false, "сейчас не ваш ход"
+        end
+        if not game.hasRolled then
+            return false, "нельзя закончить ход без броска кубика"
+        end
+        return true
+    end
+
+    return false, "неизвестный тип действия: " .. tostring(action_type)
+end
+
+function apply_action(player_id, action_type, payload)
+    if action_type == "roll_dice" then
+        local player = payload.player or game.currentPlayer
+        local roll = cpp_rand(1, 6)
+        game.diceRoll[player]  = roll
+        game.scores[player]    = game.scores[player] + roll
+        game.hasRolled         = true
+        cpp_log("Игрок " .. player .. " (id=" .. player_id .. ") бросил " .. roll
+                .. " — итого: " .. game.scores[player])
+        if game.scores[player] >= game.targetScore then
+            game.gameOver = true
+            game.winner   = player
+            cpp_log("Игрок " .. player .. " победил!")
+        end
+
+    elseif action_type == "end_turn" then
+        game.currentPlayer = game.currentPlayer == 1 and 2 or 1
+        game.hasRolled     = false
+        cpp_log("Ход передан Игроку " .. game.currentPlayer)
+    end
+end
+
+function on_undo(steps_back)
+    cpp_log("Откат на " .. steps_back .. " шаг(а/ов) — сбрасываем состояние dice_demo")
+    game.currentPlayer = 1
+    game.scores        = {0, 0}
+    game.diceRoll      = {0, 0}
+    game.hasRolled     = false
+    game.gameOver      = false
+    game.winner        = 0
+end

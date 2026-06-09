@@ -26,6 +26,7 @@ enum class MessageType : uint8_t {
     Snapshot,
     Event,
     MoveObject,
+    ActionRejected,
     Chat
 };
 
@@ -63,6 +64,7 @@ struct NetworkMessage {
     static NetworkMessage createSnapshot(const nlohmann::json& state);
     static NetworkMessage createEvent(const std::string& objectId, const std::string& eventName);
     static NetworkMessage createMoveObject(const std::string& objectId, float x, float y);
+    static NetworkMessage createActionRejected(const std::string& reason);
     static NetworkMessage createChat(const std::string& text);
     static NetworkMessage createPing();
     static NetworkMessage createPong();

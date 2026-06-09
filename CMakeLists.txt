@@ -106,6 +106,7 @@ add_library(dice_core STATIC
   src/core/Model.cpp
   src/core/Action.cpp
   src/core/ActionManager.cpp
+  src/core/ActionValidator.cpp
   src/core/SceneValidator.cpp
 )
 
@@ -126,6 +127,14 @@ target_link_libraries(dice_core
 
 
 find_package(Lua 5.3 REQUIRED)
+
+if (LUA_INCLUDE_DIR)
+  target_include_directories(dice_core PUBLIC ${LUA_INCLUDE_DIR})
+endif()
+
+if (sol2_SOURCE_DIR)
+  target_include_directories(dice_core PUBLIC ${sol2_SOURCE_DIR}/include)
+endif()
 
 # ----------------------------
 # Scripting library
@@ -153,6 +162,28 @@ if(TARGET sol2::sol2)
 else()
   target_include_directories(dice_scripting PUBLIC ${sol2_SOURCE_DIR}/include)
 endif()
+
+# ----------------------------
+# Network library
+# ----------------------------
+add_library(dice_network STATIC
+  src/network/GameClient.cpp
+  src/network/HostServer.cpp
+)
+
+target_include_directories(dice_network
+  PUBLIC
+    ${CMAKE_SOURCE_DIR}/include
+)
+
+target_link_libraries(dice_network
+  PUBLIC
+    dice_core
+    dice_scripting
+    sfml-network
+    spdlog::spdlog
+    nlohmann_json::nlohmann_json
+)
 
 # ----------------------------
 # Controller library

@@ -11,7 +11,9 @@ namespace dice::network {
 HostServer::HostServer(core::Model& model,
                        core::ActionManager& actionManager,
                        scripting::LuaScriptEngine& lua)
-    : model_(model), actionManager_(actionManager), lua_(lua) {}
+    : model_(model), actionManager_(actionManager), lua_(lua),
+      actionValidator_(
+          std::make_unique<core::ActionValidator>(model_, actionManager_, lua_, modelMutex_)) {}
 
 HostServer::~HostServer() {
     stop();
@@ -34,6 +36,14 @@ bool HostServer::start(uint16_t port) {
     isRunning_ = true;
     gameStarted_ = false;
 
+    actionValidator_->setOnAccepted([this](const core::Action& action) { broadcastSnapshot(); });
+    actionValidator_->setOnRejected([this](const core::Action& action, const std::string& reason) {
+        auto rejectMsg = NetworkMessage::createActionRejected(reason);
+        sendToClient(action.fromPlayerId, rejectMsg);
+    });
+    actionValidator_->setOnUndoApplied([this]() { broadcastSnapshot(); });
+    actionValidator_->start();
+
     serverThread_ = std::thread(&HostServer::serverLoop, this);
 
     spdlog::info("Server started on port {}", port_);
@@ -47,6 +57,9 @@ void HostServer::stop() {
         return;
     }
     isRunning_ = false;
+    if (actionValidator_) {
+        actionValidator_->stop();
+    }
     listener_.close();
 
     std::lock_guard<std::mutex> lock(clientsMutex_);
@@ -191,6 +204,7 @@ void HostServer::handleHandshake(const NetworkMessage& msg) {
     broadcast(joined, msg.fromId);
 
     if (gameStarted_) {
+        std::lock_guard<std::mutex> lock(modelMutex_);
         auto snapshot = NetworkMessage::createSnapshot(model_.toJson());
         sendToClient(msg.fromId, snapshot);
     }
@@ -225,19 +239,30 @@ void HostServer::handleEvent(const NetworkMessage& msg) {
         return;
     }
 
-    auto obj = model_.getObject(objectId);
-    if (!obj) {
-        spdlog::warn("Event target object not found: {}", objectId);
+    if (objectId.empty() || eventName.empty()) {
+        spdlog::warn("Invalid event payload from {}", msg.fromId);
         return;
     }
 
-    spdlog::info("Event from {}: {} on {}", msg.fromId, eventName, objectId);
+    {
+        std::lock_guard<std::mutex> lock(modelMutex_);
+        auto obj = model_.getObject(objectId);
+        if (!obj) {
+            spdlog::warn("Event target object not found: {}", objectId);
+            return;
+        }
+    }
 
-    actionManager_.saveSnapshot(model_);
+    spdlog::info("Enqueuing Event from {}: {} on {}", msg.fromId, eventName, objectId);
 
-    lua_.fireEvent(eventName, obj.get());
+    core::Action action;
+    action.sequenceId = nextActionSeq_++;
+    action.fromPlayerId = msg.fromId;
+    action.data = core::GameAction{eventName, nlohmann::json{{"objectId", objectId}}};
 
-    broadcast(msg);
+    if (actionValidator_) {
+        actionValidator_->enqueue(std::move(action));
+    }
 }
 
 void HostServer::handleMoveObject(const NetworkMessage& msg) {
@@ -250,16 +275,15 @@ void HostServer::handleMoveObject(const NetworkMessage& msg) {
     float x = msg.data.value("x", 0.0f);
     float y = msg.data.value("y", 0.0f);
 
-    spdlog::info("MoveObject from {}: {} to ({}, {})", msg.fromId, objectId, x, y);
+    spdlog::info("Enqueuing MoveObject from {}: {} to ({}, {})", msg.fromId, objectId, x, y);
 
-    core::MoveObjectAction action(objectId, sf::Vector2f(x, y));
+    core::Action action;
+    action.sequenceId = nextActionSeq_++;
+    action.fromPlayerId = msg.fromId;
+    action.data = core::MoveObjectAction(objectId, sf::Vector2f(x, y));
 
-    if (action.canExecute(model_)) {
-        actionManager_.saveSnapshot(model_);
-        action.execute(model_);
-        broadcast(msg);
-    } else {
-        spdlog::warn("MoveObject rejected: {} cannot be moved", objectId);
+    if (actionValidator_) {
+        actionValidator_->enqueue(std::move(action));
     }
 }
 
@@ -366,6 +390,7 @@ void HostServer::checkTimeouts() {
 }
 
 void HostServer::broadcastSnapshot() {
+    std::lock_guard<std::mutex> lock(modelMutex_);
     auto snapshot = NetworkMessage::createSnapshot(model_.toJson());
     broadcast(snapshot);
 }

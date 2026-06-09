@@ -91,6 +91,13 @@ NetworkMessage NetworkMessage::createMoveObject(const std::string& objectId, flo
     return msg;
 }
 
+NetworkMessage NetworkMessage::createActionRejected(const std::string& reason) {
+    NetworkMessage msg;
+    msg.type = MessageType::ActionRejected;
+    msg.data["reason"] = reason;
+    return msg;
+}
+
 NetworkMessage NetworkMessage::createChat(const std::string& text) {
     NetworkMessage msg;
     msg.type = MessageType::Chat;
@@ -184,6 +191,9 @@ std::string NetworkMessage::toString() const {
             break;
         case MessageType::MoveObject:
             str += "MoveObject";
+            break;
+        case MessageType::ActionRejected:
+            str += "ActionRejected";
             break;
         case MessageType::Chat:
             str += "Chat";

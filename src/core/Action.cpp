@@ -9,7 +9,7 @@ namespace dice::core {
 MoveObjectAction::MoveObjectAction(std::string object_id, sf::Vector2f new_pos)
     : objectId_(std::move(object_id)), newPos_(new_pos) {}
 
-bool MoveObjectAction::execute(Model& model) {
+bool MoveObjectAction::execute(Model& model) const {
     auto obj = model.getObject(objectId_);
     if (!obj) {
         spdlog::error("MoveObjectAction: object '{}' not found", objectId_);

@@ -529,3 +529,176 @@ end
 -- Start
 -- ============================================================
 initGame()
+
+
+-- ============================================================
+-- Network / ActionValidator hooks
+-- ============================================================
+-- Supported action types:
+--   "roll_dice"     payload: {}
+--   "move_checker"  payload: { from_pt=int, to_pt=int, die_idx=int }
+--   "end_turn"      payload: {}
+--   "new_game"      payload: {}
+-- ============================================================
+
+--- Helper: maps a network player_id string to a player number.
+--- Convention: the host registers players as "1" and "2";
+--- in single-player mode player_id is ignored.
+
+local function playerNumFromId(player_id)
+    if player_id == "2" then return 2 end
+    return 1
+end
+
+--- validate_action(player_id, action_type, payload) -> bool [, string]
+function validate_action(player_id, action_type, payload)
+    local pnum = playerNumFromId(player_id)
+
+    -- ── new_game is always allowed ─────────────────────────────────────
+    if action_type == "new_game" then
+        return true
+    end
+
+    if game.game_over then
+        return false, "game is over, start a new one"
+    end
+
+    -- ── roll_dice ──────────────────────────────────────────────────────
+    if action_type == "roll_dice" then
+        if pnum ~= game.current_player then
+            return false, "it is player " .. game.current_player .. "'s turn"
+        end
+        if game.has_rolled then
+            return false, "dice already rolled"
+        end
+        return true
+
+    -- ── move_checker ───────────────────────────────────────────────────
+    elseif action_type == "move_checker" then
+        if pnum ~= game.current_player then
+            return false, "it is player " .. game.current_player .. "'s turn"
+        end
+        if not game.has_rolled then
+            return false, "roll the dice first"
+        end
+
+        local from_pt = payload.from_pt
+        local to_pt   = payload.to_pt
+        local die_idx = payload.die_idx
+
+        -- Basic field validation
+        if not from_pt or not to_pt or not die_idx then
+            return false, "incomplete payload: from_pt, to_pt and die_idx are required"
+        end
+        if from_pt < 1 or from_pt > 24 then
+            return false, "from_pt out of range [1..24]: " .. tostring(from_pt)
+        end
+        if die_idx < 1 or die_idx > #game.dice then
+            return false, "die_idx=" .. tostring(die_idx) .. " does not exist (dice count: " .. #game.dice .. ")"
+        end
+
+        -- Verify the current player has a checker on the source point
+        local count = pnum == 1 and game.w[from_pt] or game.b[from_pt]
+        if count == 0 then
+            return false, "no checker of player " .. pnum .. " on point " .. from_pt
+        end
+
+        -- Verify the move is in the list of legal moves
+        local moves = getValidMoves(from_pt)
+        local found = false
+        for _, m in ipairs(moves) do
+            if m.to_pt == to_pt and m.die_idx == die_idx then
+                found = true; break
+            end
+        end
+        if not found then
+            return false, "move " .. from_pt .. "->" .. to_pt ..
+                          " with die #" .. die_idx .. " is not allowed"
+        end
+        return true
+
+    -- ── end_turn ───────────────────────────────────────────────────────
+    elseif action_type == "end_turn" then
+        if pnum ~= game.current_player then
+            return false, "it is player " .. game.current_player .. "'s turn"
+        end
+        if not game.has_rolled then
+            return false, "cannot end turn before rolling the dice"
+        end
+        -- Forbid ending the turn when legal moves and remaining dice are available
+        if game.moved_this_turn == false and hasAnyMove() and #game.dice > 0 then
+            return false, "legal moves are available — cannot skip the turn"
+        end
+        return true
+    end
+
+    return false, "unknown action type: " .. tostring(action_type)
+end
+
+--- apply_action(player_id, action_type, payload)
+--- Called only after validate_action returns true.
+function apply_action(player_id, action_type, payload)
+    if action_type == "new_game" then
+        initGame()
+        hideAllPoints()
+        resetDiceTextures()
+        local ng = engine.getObject("btn_new_game")
+        if ng then ng:setActive(false) end
+
+    elseif action_type == "roll_dice" then
+        local r1 = cpp_rand(1, 6)
+        local r2 = cpp_rand(1, 6)
+        if r1 == r2 then
+            game.dice = { r1, r1, r1, r1 }
+        else
+            game.dice = { r1, r2 }
+        end
+        game.has_rolled = true
+        setDiceTextures()
+        if not hasAnyMove() then
+            game.msg            = "No moves — turn skipped"
+            game.msg_timer      = 2.0
+            game.auto_end_timer = 2.0
+        end
+
+    elseif action_type == "move_checker" then
+        local from_pt = payload.from_pt
+        local to_pt   = payload.to_pt
+        local die_idx = payload.die_idx
+        executeMove(from_pt, to_pt, die_idx)
+        game.moved_this_turn = true
+        -- Clear UI selection (relevant for the scene owner)
+        game.selected_pt = 0
+        game.valid_moves = {}
+        hideAllPoints()
+        if not game.game_over and #game.dice == 0 then
+            -- all dice used — wait for end_turn
+        elseif not game.game_over and not hasAnyMove() then
+            game.msg            = "No moves — turn skipped"
+            game.msg_timer      = 2.0
+            game.auto_end_timer = 2.0
+        end
+
+    elseif action_type == "end_turn" then
+        game.auto_end_timer = 0
+        game.msg            = ""
+        doEndTurn()
+    end
+end
+
+--- on_undo(steps_back)
+--- Called by the engine after the model snapshot has been restored.
+--- Synchronises the Lua game table with the rolled-back model:
+--- resets everything to the start of the game, because snapshots only
+--- store object positions (Model), not the Lua game table.
+--- Full mid-game state preservation would require serialising game
+--- into object properties; in the current architecture a full reset
+--- via initGame() is simpler and safer.
+function on_undo(steps_back)
+    cpp_log("Nardi: rolled back " .. steps_back .. " step(s) — reinit game state")
+    initGame()
+    hideAllPoints()
+    resetDiceTextures()
+    game.msg       = "Move undone"
+    game.msg_timer = 2.0
+end

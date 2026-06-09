@@ -157,6 +157,13 @@ void GameClient::handleMessage(const NetworkMessage& msg) {
             }
             break;
 
+        case MessageType::ActionRejected:
+            if (onActionRejected_) {
+                std::string reason = msg.data.value("reason", "Action rejected");
+                onActionRejected_(reason);
+            }
+            break;
+
         case MessageType::Chat:
             if (onChatReceived_) {
                 std::string text = msg.data.value("text", "");
@@ -297,5 +304,7 @@ void GameClient::setOnChatReceived(
     std::function<void(const std::string&, const std::string&)> handler) {
     onChatReceived_ = handler;
 }
-
+void GameClient::setOnActionRejected(std::function<void(const std::string& reason)> handler) {
+    onActionRejected_ = handler;
+}
 } // namespace dice::network

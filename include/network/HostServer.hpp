@@ -14,6 +14,7 @@
 
 #include "core/Action.hpp"
 #include "core/ActionManager.hpp"
+#include "core/ActionValidator.hpp"
 #include "core/Model.hpp"
 #include "network/NetworkMessage.hpp"
 #include "scripting/LuaScriptEngine.hpp"
@@ -78,6 +79,8 @@ private:
     core::Model& model_;
     core::ActionManager& actionManager_;
     scripting::LuaScriptEngine& lua_;
+    std::unique_ptr<core::ActionValidator> actionValidator_;
+    uint32_t nextActionSeq_ = 1;
 
     sf::TcpListener listener_;
     std::unordered_map<std::string, std::unique_ptr<sf::TcpSocket>> clients_;
@@ -89,6 +92,7 @@ private:
 
     std::thread serverThread_;
     mutable std::mutex clientsMutex_;
+    mutable std::mutex modelMutex_;
 
     std::chrono::steady_clock::time_point lastBroadcastTime_;
     std::chrono::steady_clock::time_point lastPingTime_;
