@@ -260,6 +260,39 @@ void NetworkManager::registerLuaBindings() {
     });
     lua_.registerFunction(
         "send_move", [this](const std::string& id, float x, float y) { sendMoveObject(id, x, y); });
+
+    lua_.registerFunction("get_my_player", [this]() -> int {
+        if (role_ == NetworkRole::Host)   return 1;
+        if (role_ == NetworkRole::Client) return 2;
+        return 0;
+    });
+
+    lua_.registerFunction("send_state", [this](const std::string& json_str) {
+        if (hostServer_) {
+            hostServer_->broadcastState(json_str);
+        }
+    });
+
+    lua_.registerFunction("network_allow_event", [this](const std::string& name) {
+        if (hostServer_) {
+            hostServer_->allowEvent(name);
+        }
+    });
+
+    lua_.registerFunction("on_state_received", [this](sol::protected_function fn) {
+        onStateReceivedLua_ = fn;
+        if (gameClient_) {
+            gameClient_->setOnStateReceived([this](const std::string& json_str) {
+                if (onStateReceivedLua_.valid()) {
+                    auto res = onStateReceivedLua_(json_str);
+                    if (!res.valid()) {
+                        sol::error err = res;
+                        spdlog::error("on_state_received callback error: {}", err.what());
+                    }
+                }
+            });
+        }
+    });
 }
 
 void NetworkManager::setOnPlayerJoined(std::function<void(const ClientInfo&)> handler) {
