@@ -18,7 +18,9 @@ TEST(NetworkMessageTest, StateSerializeDeserializeRoundtrip) {
     const std::string payload = R"({"x":1})";
     auto original = NetworkMessage::createState(payload);
     auto bytes = original.serialize();
-    auto restored = NetworkMessage::deserialize(bytes);
+    // serialize() produces a 4-byte length prefix + JSON; strip it for deserialize()
+    std::vector<uint8_t> raw(bytes.begin() + 4, bytes.end());
+    auto restored = NetworkMessage::deserialize(raw);
     EXPECT_EQ(restored.type, MessageType::State);
     EXPECT_EQ(restored.data.value("payload", ""), payload);
 }

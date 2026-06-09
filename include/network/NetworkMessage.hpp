@@ -28,7 +28,7 @@ enum class MessageType : uint8_t {
     Event,
     MoveObject,
     Chat,
-    State,      // game state broadcast
+    State = 13, // game state broadcast
     Invalid = 255
 };
 

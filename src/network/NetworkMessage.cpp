@@ -35,21 +35,7 @@ NetworkMessage NetworkMessage::deserialize(const std::vector<uint8_t>& data) {
     msg.type = MessageType::Invalid;
 
     try {
-        // Support both framed (4-byte length prefix) and raw JSON input.
-        // serialize() produces framed output; raw JSON starts with '{'.
-        const auto* begin = data.data();
-        std::size_t size = data.size();
-        if (size >= 4 && begin[0] != '{') {
-            uint32_t msgLength = (static_cast<uint32_t>(begin[0]) << 24) |
-                                 (static_cast<uint32_t>(begin[1]) << 16) |
-                                 (static_cast<uint32_t>(begin[2]) << 8) |
-                                  static_cast<uint32_t>(begin[3]);
-            if (size == 4 + msgLength) {
-                begin += 4;
-                size = msgLength;
-            }
-        }
-        const std::string jsonStr(begin, begin + size);
+        const std::string jsonStr(data.begin(), data.end());
         const nlohmann::json json = nlohmann::json::parse(jsonStr);
 
         msg.type = static_cast<MessageType>(json.value("type", 0));
