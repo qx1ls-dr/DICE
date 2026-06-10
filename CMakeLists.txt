@@ -158,25 +158,6 @@ else()
 endif()
 
 # ----------------------------
-# Controller library
-# ----------------------------
-add_library(dice_controller STATIC
-  src/controller/Controller.cpp
-  src/app/Application.cpp
-  src/app/ConfigLoader.cpp
-)
-
-target_include_directories(dice_controller
-  PUBLIC
-    ${CMAKE_SOURCE_DIR}/include
-)
-
-target_link_libraries(dice_controller
-  PUBLIC
-    dice_scripting
-)
-
-# ----------------------------
 # Network library
 # ----------------------------
 add_library(dice_network STATIC
@@ -198,6 +179,26 @@ target_link_libraries(dice_network
     sfml-network
     nlohmann_json::nlohmann_json
     spdlog::spdlog
+)
+
+# ----------------------------
+# Controller library
+# ----------------------------
+add_library(dice_controller STATIC
+  src/controller/Controller.cpp
+  src/app/Application.cpp
+  src/app/ConfigLoader.cpp
+)
+
+target_include_directories(dice_controller
+  PUBLIC
+    ${CMAKE_SOURCE_DIR}/include
+)
+
+target_link_libraries(dice_controller
+  PUBLIC
+    dice_scripting
+    dice_network
 )
 
 # ----------------------------
@@ -302,6 +303,20 @@ target_link_libraries(dice_controller_tests
     GTest::gtest_main
 )
 gtest_discover_tests(dice_controller_tests)
+
+add_executable(dice_network_tests
+  tests/network/test_NetworkMessage.cpp
+)
+target_include_directories(dice_network_tests
+  PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+)
+target_link_libraries(dice_network_tests
+  PRIVATE
+    dice_network
+    GTest::gtest_main
+)
+gtest_discover_tests(dice_network_tests)
 
 add_custom_command(TARGET dice_scripting_tests POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory

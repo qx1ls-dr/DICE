@@ -59,6 +59,8 @@ public:
 
     void broadcastMoveObject(const std::string& object_id, float x, float y);
     void broadcastEvent(const std::string& object_id, const std::string& event_name);
+    void broadcastState(const std::string& json_str);
+    void allowEvent(const std::string& event_name);
 
     void update();
 

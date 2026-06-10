@@ -193,6 +193,14 @@ void GameClient::handleMessage(const NetworkMessage& msg) {
             break;
         }
 
+        case MessageType::State: {
+            const std::string payload = msg.data.value("payload", "");
+            if (onStateReceived_ && !payload.empty()) {
+                onStateReceived_(payload);
+            }
+            break;
+        }
+
         default:
             spdlog::warn("Unknown message type received: {}", static_cast<int>(msg.type));
             break;
@@ -325,6 +333,10 @@ void GameClient::setOnGameStarted(std::function<void()> handler) {
 void GameClient::setOnChatReceived(
     std::function<void(const std::string&, const std::string&)> handler) {
     onChatReceived_ = std::move(handler);
+}
+
+void GameClient::setOnStateReceived(std::function<void(const std::string&)> handler) {
+    onStateReceived_ = std::move(handler);
 }
 
 } // namespace dice::network

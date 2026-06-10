@@ -4,6 +4,8 @@
 #include <functional>
 #include <memory>
 
+#include <sol/sol.hpp>
+
 #include "core/ActionManager.hpp"
 #include "core/Model.hpp"
 #include "network/GameClient.hpp"
@@ -72,6 +74,8 @@ private:
     std::function<void(const std::string&)> onPlayerReady_;
     std::function<void()> onGameStarted_;
     std::function<void(const std::string&, const std::string&)> onChatReceived_;
+
+    sol::protected_function onStateReceivedLua_;
 };
 
 } // namespace dice::network

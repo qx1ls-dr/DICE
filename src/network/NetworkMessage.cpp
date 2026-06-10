@@ -115,6 +115,13 @@ NetworkMessage NetworkMessage::createChat(const std::string& text) {
     return msg;
 }
 
+NetworkMessage NetworkMessage::createState(const std::string& json_str) {
+    NetworkMessage msg;
+    msg.type = MessageType::State;
+    msg.data["payload"] = json_str;
+    return msg;
+}
+
 NetworkMessage NetworkMessage::createPing() {
     NetworkMessage msg;
     msg.type = MessageType::Ping;
@@ -204,6 +211,9 @@ std::string NetworkMessage::toString() const {
             break;
         case MessageType::Chat:
             str += "Chat";
+            break;
+        case MessageType::State:
+            str += "State";
             break;
         default:
             str += "Unknown";

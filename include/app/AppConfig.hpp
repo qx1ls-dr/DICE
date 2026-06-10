@@ -40,6 +40,11 @@ struct AppConfig {
 
     int luaMemoryLimitMb = 64;
     int maxSceneObjects = 1000;
+
+    // Network (set from CLI, not from game.json)
+    std::string networkRole; // "host" | "client" | ""
+    std::string networkHost; // IP for --join
+    uint16_t networkPort = 7777;
 };
 
 inline void from_json(const nlohmann::json& j, AppConfig& cfg) {

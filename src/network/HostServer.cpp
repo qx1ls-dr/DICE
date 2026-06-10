@@ -309,6 +309,7 @@ void HostServer::handlePing(const NetworkMessage& msg) {
 }
 
 bool HostServer::isEventAllowedForClient(const std::string& event_name) {
+    const std::lock_guard<std::mutex> lock(clientsMutex_);
     return allowedEvents_.contains(event_name);
 }
 
@@ -418,6 +419,15 @@ void HostServer::broadcastEvent(const std::string& object_id, const std::string&
 
 void HostServer::broadcastMoveObject(const std::string& object_id, float x, float y) {
     broadcast(NetworkMessage::createMoveObject(object_id, x, y));
+}
+
+void HostServer::broadcastState(const std::string& json_str) {
+    broadcast(NetworkMessage::createState(json_str));
+}
+
+void HostServer::allowEvent(const std::string& event_name) {
+    const std::lock_guard<std::mutex> lock(clientsMutex_);
+    allowedEvents_.insert(event_name);
 }
 
 void HostServer::broadcastSnapshot() {

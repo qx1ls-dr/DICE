@@ -358,7 +358,7 @@ TEST_F(LuaScriptEngineTest, MemoryLimitGCAfterSetDoesNotCrash) {
 
 TEST_F(LuaScriptEngineTest, ExecuteGlobalScriptReturnsFalseOnSyntaxError) {
     namespace fs = std::filesystem;
-    auto tmp = fs::temp_directory_path() / ("bad_script_" + std::to_string(::getpid()) + ".lua");
+    auto tmp = fs::temp_directory_path() / ("bad_script_" + std::to_string(getpid()) + ".lua");
     {
         std::ofstream f(tmp);
         f << "@@@not valid lua";
@@ -369,7 +369,7 @@ TEST_F(LuaScriptEngineTest, ExecuteGlobalScriptReturnsFalseOnSyntaxError) {
 
 TEST_F(LuaScriptEngineTest, ExecuteGlobalScriptReturnsTrueOnSuccess) {
     namespace fs = std::filesystem;
-    auto tmp = fs::temp_directory_path() / ("good_script_" + std::to_string(::getpid()) + ".lua");
+    auto tmp = fs::temp_directory_path() / ("good_script_" + std::to_string(getpid()) + ".lua");
     {
         std::ofstream f(tmp);
         f << "global_ok = true";
@@ -385,7 +385,7 @@ TEST_F(LuaScriptEngineTest, ClearSceneStateClearsModuleCache) {
     namespace fs = std::filesystem;
 
     const auto mod_path =
-        fs::temp_directory_path() / ("mod_cache_test_" + std::to_string(::getpid()) + ".lua");
+        fs::temp_directory_path() / ("mod_cache_test_" + std::to_string(getpid()) + ".lua");
     {
         std::ofstream f(mod_path);
         f << "load_count = (load_count or 0) + 1\n"
@@ -426,4 +426,41 @@ TEST_F(LuaScriptEngineTest, GetGlobalVariableWrongTypeReturnsDefault) {
 TEST_F(LuaScriptEngineTest, GetGlobalVariableCorrectTypeReturnsValue) {
     engine_.executeGlobalScriptFromSource("score = 99");
     EXPECT_EQ(engine_.getGlobalVariable<int>("score", 0), 99);
+}
+
+// ========== json_encode / json_decode ==========
+
+TEST_F(LuaScriptEngineTest, JsonEncodeSimpleTable) {
+    engine_.executeGlobalScriptFromSource(R"(
+        local t = {score = 42, name = "test"}
+        _result = json_encode(t)
+    )");
+    auto result = engine_.getGlobalVariable<std::string>("_result", "");
+    auto j = nlohmann::json::parse(result);
+    EXPECT_EQ(j["score"].get<int>(), 42);
+    EXPECT_EQ(j["name"].get<std::string>(), "test");
+}
+
+TEST_F(LuaScriptEngineTest, JsonDecodeSimpleJson) {
+    engine_.executeGlobalScriptFromSource(R"(
+        local t = json_decode('{"score":99,"player":2}')
+        _score = t.score
+        _player = t.player
+    )");
+    EXPECT_EQ(engine_.getGlobalVariable<int>("_score", 0), 99);
+    EXPECT_EQ(engine_.getGlobalVariable<int>("_player", 0), 2);
+}
+
+TEST_F(LuaScriptEngineTest, JsonRoundtrip) {
+    engine_.executeGlobalScriptFromSource(R"(
+        local original = {scores = {5, 10}, hasRolled = true}
+        local encoded = json_encode(original)
+        local decoded = json_decode(encoded)
+        _s1 = decoded.scores[1]
+        _s2 = decoded.scores[2]
+        _rolled = decoded.hasRolled
+    )");
+    EXPECT_EQ(engine_.getGlobalVariable<int>("_s1", 0), 5);
+    EXPECT_EQ(engine_.getGlobalVariable<int>("_s2", 0), 10);
+    EXPECT_EQ(engine_.getGlobalVariable<bool>("_rolled", false), true);
 }
