@@ -87,6 +87,16 @@ function test_move_burnout()
     assert(s.stress == 100, "stress at max")
 end
 
+function test_move_elevator_beats_burnout()
+    local s = fresh()
+    s.items = {}
+    s.stress = 99        -- one step away from burnout
+    s.player_r, s.player_c = 5, 4  -- adjacent to elevator at (5,5)
+    local res = logic.try_move(s, 0, 1)
+    assert(res == "elevator", "elevator beats burnout when both trigger simultaneously")
+    assert(s.stress == 100, "stress still reaches 100")
+end
+
 function test_descend_next()
     local s = fresh()
     s.floor = 3
@@ -113,6 +123,7 @@ test_move_blocked_by_border()
 test_move_step()
 test_move_elevator()
 test_move_burnout()
+test_move_elevator_beats_burnout()
 test_descend_next()
 test_descend_win()
 print("Office Logic Test: PASS")

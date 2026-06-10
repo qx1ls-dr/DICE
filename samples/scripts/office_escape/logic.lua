@@ -51,8 +51,8 @@ end
 -- Attempt a move by (dr,dc). Returns one of:
 --   "blocked"  — wall or out of bounds, nothing changed
 --   "step"     — moved onto a normal tile
---   "elevator" — moved onto the elevator tile
---   "burnout"  — the step's stress reached 100 (takes priority over elevator)
+--   "elevator" — moved onto the elevator tile (takes priority over burnout)
+--   "burnout"  — the step's stress reached 100
 function M.try_move(state, dr, dc)
     local nr, nc = state.player_r + dr, state.player_c + dc
     if nr < 1 or nr > #state.grid or nc < 1 or nc > #state.grid[1] then
@@ -65,8 +65,8 @@ function M.try_move(state, dr, dc)
     state.steps = state.steps + 1
     M.pickup(state, nr, nc)
     local burnout = M.add_stress(state, M.STRESS_PER_STEP)
-    if burnout then return "burnout" end
     if nr == state.elevator.r and nc == state.elevator.c then return "elevator" end
+    if burnout then return "burnout" end
     return "step"
 end
 
