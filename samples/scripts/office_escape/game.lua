@@ -5,11 +5,15 @@ local tile_size = 64
 
 player_r, player_c = 1, 1
 items = {}
+grid = {}
+elevator = {r = 1, c = 1}
 
 function init()
     math.randomseed(os.time())
-    local grid, generatedItems = gen.generate(grid_h, grid_w)
+    local g, generatedItems, elev = gen.generate(grid_h, grid_w)
+    grid = g
     items = generatedItems
+    elevator = elev
     -- Find a floor tile for start position
     for r = 1, grid_h do
         for c = 1, grid_w do
@@ -38,11 +42,23 @@ end
 
 function move(dr, dc)
     local nr, nc = player_r + dr, player_c + dc
-    -- Basic bounds check (full collision logic in next task)
+    -- Bounds check
     if nr >= 1 and nr <= grid_h and nc >= 1 and nc <= grid_w then
+        -- Collision check
+        if grid[nr][nc] == "wall" then
+            print("Ouch! A wall.")
+            return
+        end
+        
         player_r, player_c = nr, nc
         checkPickup(nr, nc)
         hud.addStress(1) -- Stress per step
+        
+        -- Win condition check
+        if nr == elevator.r and nc == elevator.c then
+            print("YOU ESCAPED!")
+            engine.reloadScene() -- Reload to new floor
+        end
     end
 end
 

@@ -2,7 +2,7 @@ local gen = require("scripts.office_escape.gen")
 
 function test_generate_grid()
     local rows, cols = 10, 10
-    local grid = gen.generate(rows, cols)
+    local grid, items, elevator = gen.generate(rows, cols)
     assert(#grid == rows, "Grid should have " .. rows .. " rows")
     assert(#grid[1] == cols, "Grid should have " .. cols .. " cols")
     
@@ -15,11 +15,13 @@ function test_generate_grid()
         end
     end
     assert(floorCount > 0, "Generator should create at least one floor tile")
+    assert(elevator ~= nil, "Generator should return an elevator position")
+    assert(grid[elevator.r][elevator.c] == "floor", "Elevator should be on a floor tile")
 end
 
 function test_generate_items()
     local rows, cols = 10, 10
-    local grid, items = gen.generate(rows, cols)
+    local grid, items, elevator = gen.generate(rows, cols)
     assert(items ~= nil, "Generator should return an items list")
     assert(type(items) == "table", "Items should be a table")
     
@@ -36,4 +38,4 @@ end
 
 test_generate_grid()
 test_generate_items()
-print("Task 4 Step 1: PASS")
+print("Office Gen Test: PASS")

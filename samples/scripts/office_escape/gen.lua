@@ -42,7 +42,24 @@ function M.generate(rows, cols)
     end
     ::found::
 
-    return grid, items
+    -- Choose elevator position (far from the first floor tile found)
+    local elevator = {r = 1, c = 1}
+    local start_r, start_c = -1, -1
+    for r = 1, rows do
+        for c = 1, cols do
+            if grid[r][c] == "floor" then
+                if start_r == -1 then
+                    start_r, start_c = r, c
+                end
+                -- Furthest tile by Manhattan distance
+                if (math.abs(r - start_r) + math.abs(c - start_c)) > (math.abs(elevator.r - start_r) + math.abs(elevator.c - start_c)) then
+                    elevator.r, elevator.c = r, c
+                end
+            end
+        end
+    end
+
+    return grid, items, elevator
 end
 
 return M
