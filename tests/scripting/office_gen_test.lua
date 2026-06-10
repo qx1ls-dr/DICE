@@ -24,7 +24,7 @@ function test_generate_items()
     local grid, items, elevator = gen.generate(rows, cols)
     assert(items ~= nil, "Generator should return an items list")
     assert(type(items) == "table", "Items should be a table")
-    
+
     local coffeeCount = 0
     for _, item in ipairs(items) do
         assert(item.type == "coffee", "Item type should be 'coffee'")
@@ -36,6 +36,16 @@ function test_generate_items()
     assert(coffeeCount > 0, "Generator should create at least one coffee item")
 end
 
+function test_generate_start()
+    local rows, cols = 10, 10
+    local grid, items, elevator, start = gen.generate(rows, cols)
+    assert(start ~= nil, "Generator should return a start position")
+    assert(start.r >= 1 and start.r <= rows, "Start row out of bounds")
+    assert(start.c >= 1 and start.c <= cols, "Start col out of bounds")
+    assert(grid[start.r][start.c] == "floor", "Start should be on a floor tile")
+end
+
 test_generate_grid()
 test_generate_items()
+test_generate_start()
 print("Office Gen Test: PASS")

@@ -8,7 +8,8 @@ function M.generate(rows, cols)
             grid[r][c] = "wall"
         end
     end
-    -- Simple random walk for now
+
+    -- Random walk carves the floor.
     local cr, cc = math.random(1, rows), math.random(1, cols)
     local steps = math.floor(rows * cols * 0.3)
     for i = 1, steps do
@@ -20,21 +21,20 @@ function M.generate(rows, cols)
         elseif dir == 4 and cc < cols then cc = cc + 1 end
     end
 
+    -- Coffee on ~10% of floor tiles; guarantee at least one.
     local items = {}
-    -- Place some coffee on floors
     for r = 1, rows do
         for c = 1, cols do
             if grid[r][c] == "floor" and math.random() < 0.1 then
-                table.insert(items, {type="coffee", r=r, c=c})
+                table.insert(items, {type = "coffee", r = r, c = c})
             end
         end
     end
-    -- Ensure at least one coffee if floor exists
     if #items == 0 then
         for r = 1, rows do
             for c = 1, cols do
                 if grid[r][c] == "floor" then
-                    table.insert(items, {type="coffee", r=r, c=c})
+                    table.insert(items, {type = "coffee", r = r, c = c})
                     goto found
                 end
             end
@@ -42,24 +42,27 @@ function M.generate(rows, cols)
     end
     ::found::
 
-    -- Choose elevator position (far from the first floor tile found)
+    -- start = first floor tile found; elevator = farthest floor tile from start.
+    local start = {r = 1, c = 1}
     local elevator = {r = 1, c = 1}
-    local start_r, start_c = -1, -1
+    local start_set = false
     for r = 1, rows do
         for c = 1, cols do
             if grid[r][c] == "floor" then
-                if start_r == -1 then
-                    start_r, start_c = r, c
-                end
-                -- Furthest tile by Manhattan distance
-                if (math.abs(r - start_r) + math.abs(c - start_c)) > (math.abs(elevator.r - start_r) + math.abs(elevator.c - start_c)) then
+                if not start_set then
+                    start.r, start.c = r, c
+                    elevator.r, elevator.c = r, c
+                    start_set = true
+                elseif (math.abs(r - start.r) + math.abs(c - start.c)) >
+                       (math.abs(elevator.r - start.r) + math.abs(elevator.c - start.c)) then
                     elevator.r, elevator.c = r, c
                 end
             end
         end
     end
 
-    return grid, items, elevator
+    return grid, items, elevator, start
 end
 
+OfficeGen = M
 return M
