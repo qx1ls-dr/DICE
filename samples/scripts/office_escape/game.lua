@@ -142,7 +142,7 @@ local function draw_title()
 end
 
 local function draw_end(title_text, title_col)
-    rect(0, 0, 1280, 720, C_BG, 245)
+    rect(0, 0, 1280, 720, C_BG, 255)
     text_center(title_text, 640, 230, 56, title_col)
     text_center("Floors cleared:  " .. state.floors_cleared, 640, 330, 24, C_TEXT)
     text_center("Coffee drunk:  " .. state.coffee, 640, 372, 24, C_TEXT)
@@ -157,7 +157,7 @@ end
 
 -- ── ENGINE HOOKS ─────────────────────────────────────────────────────────────
 function update(dt)
-    pulse_t = pulse_t + dt
+    pulse_t = (pulse_t + dt) % (2 * math.pi)
     if phase == "FLOOR_CARD" then
         card_t = card_t + dt
         if card_t >= FLOOR_CARD_TIME then phase = "PLAYING" end
