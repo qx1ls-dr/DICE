@@ -6,7 +6,7 @@
     "clearR": 30,
     "clearG": 30,
     "clearB": 40,
-    "startScene": "scenes/nardi.json",
+    "startScene": "scenes/office_escape.json",
     "globalScript": "",
     "showFPS": true,
     "showObjectCount": true,

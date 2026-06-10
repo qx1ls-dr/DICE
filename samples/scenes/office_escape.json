@@ -1,0 +1,4 @@
+{
+  "scripts": ["scripts/office_escape/game.lua"],
+  "objects": []
+}
