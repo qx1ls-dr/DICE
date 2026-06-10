@@ -3,6 +3,7 @@ local grid_w, grid_h = 15, 10
 local tile_size = 64
 
 function init()
+    math.randomseed(os.time())
     local grid = gen.generate(grid_h, grid_w)
     for r = 1, grid_h do
         for c = 1, grid_w do
@@ -16,4 +17,7 @@ function init()
 end
 
 engine.onKey("W", function() print("Move Up") end)
+engine.onKey("A", function() print("Move Left") end)
+engine.onKey("S", function() print("Move Down") end)
+engine.onKey("D", function() print("Move Right") end)
 init()
