@@ -63,6 +63,30 @@ function move(dr, dc)
 end
 
 function draw()
+    local off_x, off_y = 50, 100
+    for r = 1, grid_h do
+        for c = 1, grid_w do
+            local x, y = off_x + (c-1)*tile_size, off_y + (r-1)*tile_size
+            if grid[r][c] == "wall" then
+                cpp_draw_rect(x, y, tile_size-2, tile_size-2, 80, 80, 80, 255)
+            else
+                cpp_draw_rect(x, y, tile_size-2, tile_size-2, 200, 200, 200, 255)
+            end
+            
+            if r == elevator.r and c == elevator.c then
+                cpp_draw_text_center("E", x + tile_size/2, y + tile_size/2, 24, 50, 200, 50)
+            end
+        end
+    end
+    
+    for _, item in ipairs(items) do
+        local x, y = off_x + (item.c-1)*tile_size, off_y + (item.r-1)*tile_size
+        cpp_draw_text_center("C", x + tile_size/2, y + tile_size/2, 24, 200, 50, 50)
+    end
+    
+    local px, py = off_x + (player_c-1)*tile_size, off_y + (player_r-1)*tile_size
+    cpp_draw_text_center("P", px + tile_size/2, py + tile_size/2, 32, 50, 50, 255)
+    
     hud.draw()
 end
 
