@@ -1,4 +1,5 @@
 local gen = require("scripts.office_escape.gen")
+local hud = require("scripts.office_escape.hud")
 local grid_w, grid_h = 15, 10
 local tile_size = 64
 
@@ -16,8 +17,13 @@ function init()
     print("Office Escape Initialized")
 end
 
+function draw()
+    hud.draw()
+end
+
 engine.onKey("W", function() print("Move Up") end)
 engine.onKey("A", function() print("Move Left") end)
 engine.onKey("S", function() print("Move Down") end)
 engine.onKey("D", function() print("Move Right") end)
+engine.onKey("Space", function() hud.addStress(5) end)
 init()
