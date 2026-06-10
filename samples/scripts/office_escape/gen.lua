@@ -19,7 +19,30 @@ function M.generate(rows, cols)
         elseif dir == 3 and cc > 1 then cc = cc - 1
         elseif dir == 4 and cc < cols then cc = cc + 1 end
     end
-    return grid
+
+    local items = {}
+    -- Place some coffee on floors
+    for r = 1, rows do
+        for c = 1, cols do
+            if grid[r][c] == "floor" and math.random() < 0.1 then
+                table.insert(items, {type="coffee", r=r, c=c})
+            end
+        end
+    end
+    -- Ensure at least one coffee if floor exists
+    if #items == 0 then
+        for r = 1, rows do
+            for c = 1, cols do
+                if grid[r][c] == "floor" then
+                    table.insert(items, {type="coffee", r=r, c=c})
+                    goto found
+                end
+            end
+        end
+    end
+    ::found::
+
+    return grid, items
 end
 
 return M

@@ -17,5 +17,23 @@ function test_generate_grid()
     assert(floorCount > 0, "Generator should create at least one floor tile")
 end
 
+function test_generate_items()
+    local rows, cols = 10, 10
+    local grid, items = gen.generate(rows, cols)
+    assert(items ~= nil, "Generator should return an items list")
+    assert(type(items) == "table", "Items should be a table")
+    
+    local coffeeCount = 0
+    for _, item in ipairs(items) do
+        assert(item.type == "coffee", "Item type should be 'coffee'")
+        assert(item.r >= 1 and item.r <= rows, "Item row out of bounds")
+        assert(item.c >= 1 and item.c <= cols, "Item col out of bounds")
+        assert(grid[item.r][item.c] == "floor", "Items should only be placed on floor tiles")
+        coffeeCount = coffeeCount + 1
+    end
+    assert(coffeeCount > 0, "Generator should create at least one coffee item")
+end
+
 test_generate_grid()
-print("Task 1 Refinement: PASS")
+test_generate_items()
+print("Task 4 Step 1: PASS")
