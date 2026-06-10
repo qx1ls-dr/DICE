@@ -2,11 +2,12 @@
 -- Pure model: OfficeGen (gen.lua) + OfficeLogic (logic.lua), loaded before this.
 
 -- ── CONFIG ───────────────────────────────────────────────────────────────────
-local GRID_W, GRID_H = 15, 10
-local TILE = 60
-local OFF_X = math.floor((1280 - GRID_W * TILE) / 2)   -- 190
-local OFF_Y = 70
+local GRID_W, GRID_H = 48, 32
+local TILE = 48
+local WORLD_W, WORLD_H = GRID_W * TILE, GRID_H * TILE   -- 2304 x 1536
+local VIEW_W, VIEW_H = 1280, 720
 local SLIDE_SPEED = 12        -- player slide smoothing (higher = snappier)
+local CAM_SPEED = 8           -- camera follow smoothing
 local FLOOR_CARD_TIME = 1.0   -- seconds the "FLOOR n" card stays up
 
 -- ── PALETTE (r,g,b) ──────────────────────────────────────────────────────────
@@ -33,16 +34,24 @@ local state = {
 local phase = "TITLE"   -- TITLE | PLAYING | FLOOR_CARD | WIN | GAME_OVER
 local card_t = 0
 local pulse_t = 0
-local render_cx, render_cy = 0, 0   -- interpolated player center, pixels
+local render_cx, render_cy = 0, 0   -- interpolated player centre, world px
+local cam_x, cam_y = 0, 0           -- camera top-left corner, world px
 
 -- ── HELPERS ──────────────────────────────────────────────────────────────────
 local function tile_center(r, c)
-    return OFF_X + (c - 1) * TILE + TILE / 2,
-           OFF_Y + (r - 1) * TILE + TILE / 2
+    return (c - 1) * TILE + TILE / 2, (r - 1) * TILE + TILE / 2
+end
+
+-- Camera goal: player centred, clamped to the world bounds.
+local function camera_target()
+    local tx = math.max(0, math.min(WORLD_W - VIEW_W, render_cx - VIEW_W / 2))
+    local ty = math.max(0, math.min(WORLD_H - VIEW_H, render_cy - VIEW_H / 2))
+    return tx, ty
 end
 
 local function snap_player_render()
     render_cx, render_cy = tile_center(state.player_r, state.player_c)
+    cam_x, cam_y = camera_target()
 end
 
 local function rect(x, y, w, h, col, a)
@@ -80,34 +89,47 @@ end
 
 -- ── RENDER: BOARD + HUD ──────────────────────────────────────────────────────
 local function draw_board()
-    for r = 1, GRID_H do
-        for c = 1, GRID_W do
-            local x = OFF_X + (c - 1) * TILE
-            local y = OFF_Y + (r - 1) * TILE
+    rect(0, 0, VIEW_W, VIEW_H, C_BG)
+
+    -- Visible tile range only (the world is ~3.4x the viewport area).
+    local c0 = math.max(1, math.floor(cam_x / TILE) + 1)
+    local c1 = math.min(GRID_W, math.ceil((cam_x + VIEW_W) / TILE))
+    local r0 = math.max(1, math.floor(cam_y / TILE) + 1)
+    local r1 = math.min(GRID_H, math.ceil((cam_y + VIEW_H) / TILE))
+
+    for r = r0, r1 do
+        for c = c0, c1 do
+            local x = (c - 1) * TILE - cam_x
+            local y = (r - 1) * TILE - cam_y
             local col = (state.grid[r][c] == "wall") and C_WALL or C_FLOOR
-            rect(x + 3, y + 3, TILE - 6, TILE - 6, col)
+            rect(x + 2, y + 2, TILE - 4, TILE - 4, col)
         end
     end
 
     -- elevator tile
-    local ex = OFF_X + (state.elevator.c - 1) * TILE
-    local ey = OFF_Y + (state.elevator.r - 1) * TILE
-    rect(ex + 3, ey + 3, TILE - 6, TILE - 6, C_EXIT)
-    text_center(state.floor == 1 and "OUT" or "v",
-        ex + TILE / 2, ey + TILE / 2, 22, C_FLOOR)
+    local er, ec = state.elevator.r, state.elevator.c
+    if er >= r0 and er <= r1 and ec >= c0 and ec <= c1 then
+        local ex = (ec - 1) * TILE - cam_x
+        local ey = (er - 1) * TILE - cam_y
+        rect(ex + 2, ey + 2, TILE - 4, TILE - 4, C_EXIT)
+        text_center(state.floor == 1 and "OUT" or "v",
+            ex + TILE / 2, ey + TILE / 2, 18, C_FLOOR)
+    end
 
     -- coffee (gentle pulse)
     local pulse = 1.0 + 0.15 * math.sin(pulse_t * 4)
     for _, it in ipairs(state.items) do
-        local cx = OFF_X + (it.c - 1) * TILE + TILE / 2
-        local cy = OFF_Y + (it.r - 1) * TILE + TILE / 2
-        local s = TILE * 0.30 * pulse
-        rect(cx - s / 2, cy - s / 2, s, s, C_COFFEE)
+        if it.r >= r0 and it.r <= r1 and it.c >= c0 and it.c <= c1 then
+            local cx = (it.c - 1) * TILE - cam_x + TILE / 2
+            local cy = (it.r - 1) * TILE - cam_y + TILE / 2
+            local s = TILE * 0.30 * pulse
+            rect(cx - s / 2, cy - s / 2, s, s, C_COFFEE)
+        end
     end
 
     -- player (interpolated position)
     local ps = TILE * 0.60
-    rect(render_cx - ps / 2, render_cy - ps / 2, ps, ps, C_PLAYER)
+    rect(render_cx - cam_x - ps / 2, render_cy - cam_y - ps / 2, ps, ps, C_PLAYER)
 end
 
 local function stress_color()
@@ -117,18 +139,19 @@ local function stress_color()
 end
 
 local function draw_hud()
-    cpp_draw_text_left("FLOOR " .. state.floor, OFF_X, 22, 22,
+    rect(0, 0, VIEW_W, 44, C_BG, 235)
+    cpp_draw_text_left("FLOOR " .. state.floor, 24, 22, 22,
         C_TEXT[1], C_TEXT[2], C_TEXT[3])
 
-    local bw, bh, by = 320, 20, 20
-    local bx = (1280 - bw) / 2
+    local bw, bh, by = 320, 20, 12
+    local bx = (VIEW_W - bw) / 2
     rect(bx, by, bw, bh, C_TRACK)
     local fill = (state.stress / 100) * bw
     if fill > 0 then rect(bx, by, fill, bh, stress_color()) end
     text_center("STRESS " .. math.floor(state.stress) .. "%",
         640, by + bh / 2, 14, C_TEXT)
 
-    cpp_draw_text_right("COFFEE " .. state.coffee, OFF_X + GRID_W * TILE, 22, 22,
+    cpp_draw_text_right("COFFEE " .. state.coffee, VIEW_W - 24, 22, 22,
         C_TEXT[1], C_TEXT[2], C_TEXT[3])
 end
 
@@ -167,6 +190,11 @@ function update(dt)
         local k = math.min(1, dt * SLIDE_SPEED)
         render_cx = render_cx + (tx - render_cx) * k
         render_cy = render_cy + (ty - render_cy) * k
+
+        local gx, gy = camera_target()
+        local ck = math.min(1, dt * CAM_SPEED)
+        cam_x = cam_x + (gx - cam_x) * ck
+        cam_y = cam_y + (gy - cam_y) * ck
     end
 end
 
@@ -180,7 +208,8 @@ function draw()
     else
         draw_board()
         draw_hud()
-        text_center("WASD / Arrows - move       R - restart", 640, 700, 16, C_MUTED)
+        rect(0, VIEW_H - 32, VIEW_W, 32, C_BG, 235)
+        text_center("WASD / Arrows - move       R - restart", 640, VIEW_H - 16, 16, C_MUTED)
         if phase == "FLOOR_CARD" then draw_floor_card() end
     end
 end
@@ -203,4 +232,5 @@ engine.onKey("R", function() start_game() end)
 
 -- ── BOOT ─────────────────────────────────────────────────────────────────────
 -- Start on the TITLE screen; the board is generated on start_game().
-math.randomseed(os and os.time() or 0)
+-- No math.randomseed here: the engine has no `os` (seed was always 0 — same
+-- map every launch). The generator uses cpp_rand, seeded on the C++ side.
