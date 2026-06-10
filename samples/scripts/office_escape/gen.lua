@@ -10,7 +10,8 @@ function M.generate(rows, cols)
     end
     -- Simple random walk for now
     local cr, cc = math.random(1, rows), math.random(1, cols)
-    for i = 1, 20 do
+    local steps = math.floor(rows * cols * 0.3)
+    for i = 1, steps do
         grid[cr][cc] = "floor"
         local dir = math.random(1, 4)
         if dir == 1 and cr > 1 then cr = cr - 1
