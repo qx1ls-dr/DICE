@@ -27,33 +27,70 @@ enum class MessageType : uint8_t {
     Snapshot,
     Event,
     MoveObject,
+    ActionRejected,
+    UndoRequest,
     Chat,
     Invalid = 255
 };
 
 enum class PlayerStatus : uint8_t { Connecting = 0, Connected, Ready, InGame, Disconnected };
 
-struct ClientInfo {
-    std::string id;
-    std::string name;
-    std::string ip;
-    uint16_t port = 0;
-    PlayerStatus status = PlayerStatus::Connecting;
-    std::chrono::steady_clock::time_point lastPing;
+// All members are private; use accessors or aggregate-initialise via the
+// static factory helpers below.
+class ClientInfo {
+public:
+    ClientInfo() = default;
+    ClientInfo(std::string id,
+               std::string name,
+               std::string ip,
+               uint16_t    port,
+               PlayerStatus status = PlayerStatus::Connecting)
+        : id_(std::move(id))
+        , name_(std::move(name))
+        , ip_(std::move(ip))
+        , port_(port)
+        , status_(status)
+        , lastPing_(std::chrono::steady_clock::now()) {}
 
-    std::string toString() const {
-        return name + " (" + ip + ":" + std::to_string(port) + ")";
+    [[nodiscard]] const std::string& getId()   const { return id_; }
+    [[nodiscard]] const std::string& getName() const { return name_; }
+    [[nodiscard]] const std::string& getIp()   const { return ip_; }
+    [[nodiscard]] uint16_t           getPort() const { return port_; }
+    [[nodiscard]] PlayerStatus       getStatus() const { return status_; }
+    [[nodiscard]] std::chrono::steady_clock::time_point getLastPing() const { return lastPing_; }
+    [[nodiscard]] const std::string& getScriptsVersion() const { return scriptsVersion_; }
+
+    void setId(std::string v)              { id_   = std::move(v); }
+    void setName(std::string v)            { name_ = std::move(v); }
+    void setIp(std::string v)              { ip_   = std::move(v); }
+    void setPort(uint16_t v)               { port_ = v; }
+    void setStatus(PlayerStatus v)         { status_ = v; }
+    void setLastPing(std::chrono::steady_clock::time_point v) { lastPing_ = v; }
+    void setScriptsVersion(std::string v)  { scriptsVersion_ = std::move(v); }
+    void touchPing()                       { lastPing_ = std::chrono::steady_clock::now(); }
+
+    [[nodiscard]] std::string toString() const {
+        return name_ + " (" + ip_ + ":" + std::to_string(port_) + ")";
     }
+
+private:
+    std::string  id_;
+    std::string  name_;
+    std::string  ip_;
+    uint16_t     port_   = 0;
+    PlayerStatus status_ = PlayerStatus::Connecting;
+    std::chrono::steady_clock::time_point lastPing_;
+    std::string  scriptsVersion_;
 };
 
 struct NetworkMessage {
-    MessageType type = MessageType::Invalid;
-    uint32_t sequenceId = 0;
-    uint64_t timestamp = 0;
-    std::string fromId;
+    MessageType    type       = MessageType::Invalid;
+    uint32_t       sequenceId = 0;
+    uint64_t       timestamp  = 0;
+    std::string    fromId;
     nlohmann::json data;
 
-    std::vector<uint8_t> serialize() const;
+    [[nodiscard]] std::vector<uint8_t> serialize() const;
 
     static NetworkMessage deserialize(const std::vector<uint8_t>& data);
 
@@ -64,6 +101,8 @@ struct NetworkMessage {
     static NetworkMessage createSnapshot(const nlohmann::json& state);
     static NetworkMessage createEvent(const std::string& object_id, const std::string& event_name);
     static NetworkMessage createMoveObject(const std::string& object_id, float x, float y);
+    static NetworkMessage createActionRejected(const std::string& reason);
+    static NetworkMessage createUndoRequest(uint32_t target_seq = 0);
     static NetworkMessage createChat(const std::string& text);
     static NetworkMessage createPing();
     static NetworkMessage createPong();
@@ -72,8 +111,8 @@ struct NetworkMessage {
     static NetworkMessage createPlayerLeft(const std::string& player_id);
     static NetworkMessage createDisconnect(const std::string& reason = "");
 
-    bool isValid() const;
-    std::string toString() const;
+    [[nodiscard]] bool        isValid()   const;
+    [[nodiscard]] std::string toString() const;
 };
 
 class MessageBuffer {
@@ -93,7 +132,7 @@ public:
 
         uint32_t msgLength =
             (static_cast<uint32_t>(buffer_[0]) << 24) | (static_cast<uint32_t>(buffer_[1]) << 16) |
-            (static_cast<uint32_t>(buffer_[2]) << 8) | static_cast<uint32_t>(buffer_[3]);
+            (static_cast<uint32_t>(buffer_[2]) << 8)  |  static_cast<uint32_t>(buffer_[3]);
 
         if (buffer_.size() < 4 + msgLength) {
             return std::nullopt;
@@ -106,15 +145,9 @@ public:
         return NetworkMessage::deserialize(jsonData);
     }
 
-    void clear() {
-        buffer_.clear();
-    }
-    bool empty() const {
-        return buffer_.empty();
-    }
-    size_t size() const {
-        return buffer_.size();
-    }
+    void   clear() { buffer_.clear(); }
+    [[nodiscard]] bool   empty() const { return buffer_.empty(); }
+    [[nodiscard]] size_t size()  const { return buffer_.size(); }
 
 private:
     std::vector<uint8_t> buffer_;

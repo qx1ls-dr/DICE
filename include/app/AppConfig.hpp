@@ -18,6 +18,14 @@ struct FontEntry {
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FontEntry, id, path)
 
+struct NetworkConfig {
+    std::string role;       // "host", "client", or "" (singleplayer)
+    uint16_t    port   = 7777;
+    std::string hostIp = "127.0.0.1";
+    std::string playerName = "Player";
+    int         undoQuorum = 0; // 0 = anyone can undo, N = unanimous
+};
+
 struct AppConfig {
     int windowWidth = 1280;
     int windowHeight = 720;
@@ -40,6 +48,7 @@ struct AppConfig {
 
     int luaMemoryLimitMb = 64;
     int maxSceneObjects = 1000;
+    NetworkConfig network;
 };
 
 inline void from_json(const nlohmann::json& j, AppConfig& cfg) {
@@ -59,6 +68,15 @@ inline void from_json(const nlohmann::json& j, AppConfig& cfg) {
     cfg.resizable = j.value("resizable", cfg.resizable);
     cfg.luaMemoryLimitMb = j.value("luaMemoryLimitMb", cfg.luaMemoryLimitMb);
     cfg.maxSceneObjects = j.value("maxSceneObjects", cfg.maxSceneObjects);
+
+    if (j.contains("network") && j["network"].is_object()) {
+        const auto& n = j["network"];
+        cfg.network.role       = n.value("role",       cfg.network.role);
+        cfg.network.port       = n.value("port",       cfg.network.port);
+        cfg.network.hostIp     = n.value("hostIp",     cfg.network.hostIp);
+        cfg.network.playerName = n.value("playerName", cfg.network.playerName);
+        cfg.network.undoQuorum = n.value("undoQuorum", cfg.network.undoQuorum);
+    }
 
     if (cfg.luaMemoryLimitMb <= 0) {
         spdlog::warn("AppConfig: luaMemoryLimitMb={} invalid, using default 64",
@@ -90,6 +108,13 @@ inline void to_json(nlohmann::json& j, const AppConfig& cfg) {
         {"resizable", cfg.resizable},
         {"luaMemoryLimitMb", cfg.luaMemoryLimitMb},
         {"maxSceneObjects", cfg.maxSceneObjects},
+        {"network", {
+            {"role",       cfg.network.role},
+            {"port",       cfg.network.port},
+            {"hostIp",     cfg.network.hostIp},
+            {"playerName", cfg.network.playerName},
+            {"undoQuorum", cfg.network.undoQuorum},
+        }},
     };
 }
 

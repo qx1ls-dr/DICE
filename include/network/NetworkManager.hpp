@@ -36,11 +36,13 @@ public:
 
     void sendEvent(const std::string& object_id, const std::string& event_name);
     void sendMoveObject(const std::string& object_id, float x, float y);
+    void sendUndo(uint32_t target_seq = 0);
     void sendReady();
     void sendChat(const std::string& text);
 
     void startGame();
     void kickPlayer(const std::string& player_id);
+    void setUndoQuorum(size_t quorum);
 
     std::vector<ClientInfo> getPlayers() const;
 
@@ -56,6 +58,7 @@ public:
 private:
     void registerLuaBindings();
     void cleanupGameClient();
+    void broadcastSnapshotFromHost();
 
     core::Model& model_;
     core::ActionManager& actionManager_;
@@ -66,6 +69,7 @@ private:
     std::unique_ptr<HostServer> hostServer_;
     std::unique_ptr<GameClient> gameClient_;
     NetworkRole role_ = NetworkRole::SinglePlayer;
+    size_t undoQuorum_ = 0;
 
     std::function<void(const ClientInfo&)> onPlayerJoined_;
     std::function<void(const std::string&)> onPlayerLeft_;

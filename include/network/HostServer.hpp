@@ -15,6 +15,7 @@
 
 #include "core/Action.hpp"
 #include "core/ActionManager.hpp"
+#include "core/ActionValidator.hpp"
 #include "core/Model.hpp"
 #include "network/NetworkMessage.hpp"
 #include "scripting/LuaScriptEngine.hpp"
@@ -34,21 +35,20 @@ public:
                scripting::LuaScriptEngine& lua);
     ~HostServer();
 
+    HostServer(const HostServer&)            = delete;
+    HostServer& operator=(const HostServer&) = delete;
+    HostServer(HostServer&&)                 = delete;
+    HostServer& operator=(HostServer&&)      = delete;
+
     bool start(uint16_t port);
     void stop();
-    bool isRunning() const {
-        return isRunning_;
-    }
-    bool isGameStarted() const {
-        return gameStarted_;
-    }
+    [[nodiscard]] bool isRunning() const { return isRunning_; }
+    [[nodiscard]] bool isGameStarted() const { return gameStarted_; }
 
     static std::string getLocalIp();
-    uint16_t getPort() const {
-        return port_;
-    }
-    std::vector<ClientInfo> getClients() const;
-    size_t getClientCount() const {
+    [[nodiscard]] uint16_t getPort() const { return port_; }
+    [[nodiscard]] std::vector<ClientInfo> getClients() const;
+    [[nodiscard]] size_t getClientCount() const {
         const std::lock_guard<std::mutex> lock(clientsMutex_);
         return clients_.size();
     }
@@ -59,12 +59,13 @@ public:
 
     void broadcastMoveObject(const std::string& object_id, float x, float y);
     void broadcastEvent(const std::string& object_id, const std::string& event_name);
+    void broadcastSnapshot();
 
     void update();
 
     void setOnClientJoined(std::function<void(const ClientInfo&)> handler);
-    void setOnClientLeft(std::function<void(const std::string& clientId)> handler);
-    void setOnClientReady(std::function<void(const std::string& clientId)> handler);
+    void setOnClientLeft(std::function<void(const std::string&)> handler);
+    void setOnClientReady(std::function<void(const std::string&)> handler);
     void setOnGameStarted(std::function<void()> handler);
     void setOnChatReceived(std::function<void(const std::string&, const std::string&)> handler);
 
@@ -76,46 +77,49 @@ private:
     void broadcast(const NetworkMessage& msg, const std::string& exclude_id = "");
     void removeClient(const std::string& client_id);
     void checkTimeouts();
-    void broadcastSnapshot();
 
     void handleHandshake(const NetworkMessage& msg);
     void handlePlayerReady(const NetworkMessage& msg);
     void handleEvent(const NetworkMessage& msg);
     void handleMoveObject(const NetworkMessage& msg);
+    void handleUndo(const NetworkMessage& msg);
     void handleChat(const NetworkMessage& msg);
     void handlePing(const NetworkMessage& msg);
 
-    bool isEventAllowedForClient(const std::string& event_name);
+    [[nodiscard]] bool isEventAllowedForClient(const std::string& event_name) const;
 
     static std::string generateId();
 
-    core::Model& model_;
-    core::ActionManager& actionManager_;
+    core::Model&                model_;
+    core::ActionManager&        actionManager_;
     scripting::LuaScriptEngine& lua_;
+
+    std::unique_ptr<core::ActionValidator> actionValidator_;
+    uint32_t nextActionSeq_ = 1;
 
     sf::TcpListener listener_;
     std::unordered_map<std::string, std::shared_ptr<ClientContext>> clients_;
 
-    uint16_t port_ = 0;
-    std::atomic<bool> isRunning_{false};
-    std::atomic<bool> gameStarted_{false};
+    uint16_t            port_        = 0;
+    std::atomic<bool>   isRunning_{false};
+    std::atomic<bool>   gameStarted_{false};
 
-    std::thread serverThread_;
-    mutable std::mutex clientsMutex_;
-    mutable std::mutex modelMutex_;
+    std::thread           serverThread_;
+    mutable std::mutex    clientsMutex_;
+    mutable std::mutex    modelMutex_;
 
     std::chrono::steady_clock::time_point lastBroadcastTime_;
     std::chrono::steady_clock::time_point lastPingTime_;
-    float broadcastInterval_ = 0.1f;
-    float pingInterval_ = 5.0f;
-    float timeoutInterval_ = 15.0f;
+    float broadcastInterval_ = 0.1F;
+    float pingInterval_      = 5.0F;
+    float timeoutInterval_   = 15.0F;
 
     std::unordered_set<std::string> allowedEvents_ = {"on_click", "on_drag_start", "on_drag_end"};
 
-    std::function<void(const ClientInfo&)> onClientJoined_;
-    std::function<void(const std::string&)> onClientLeft_;
-    std::function<void(const std::string&)> onClientReady_;
-    std::function<void()> onGameStarted_;
+    std::function<void(const ClientInfo&)>               onClientJoined_;
+    std::function<void(const std::string&)>              onClientLeft_;
+    std::function<void(const std::string&)>              onClientReady_;
+    std::function<void()>                                onGameStarted_;
     std::function<void(const std::string&, const std::string&)> onChatReceived_;
 };
 

@@ -195,6 +195,10 @@ public:
         return properties_.find(key) != properties_.end();
     }
 
+    [[nodiscard]] const std::unordered_map<std::string, nlohmann::json>& getProperties() const {
+        return properties_;
+    }
+
     // ========== Updating and rendering ==========
 
     virtual void update(float delta_time);

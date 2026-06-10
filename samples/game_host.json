@@ -1,0 +1,28 @@
+{
+    "windowWidth": 1280,
+    "windowHeight": 720,
+    "title": "DICE — Host",
+    "framerateLimit": 60,
+    "clearR": 30,
+    "clearG": 30,
+    "clearB": 40,
+    "startScene": "scenes/demo.json",
+    "globalScript": "",
+    "showFPS": true,
+    "showObjectCount": true,
+    "showControls": true,
+    "resizable": false,
+    "fonts": [
+        {
+            "id": "default_font",
+            "path": "assets/fonts/OpenSans-Regular.ttf"
+        }
+    ],
+    "luaMemoryLimitMb": 64,
+    "maxSceneObjects": 1000,
+    "network": {
+        "role": "host",
+        "port": 7777,
+        "undoQuorum": 0
+    }
+}

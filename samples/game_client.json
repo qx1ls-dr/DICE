@@ -1,0 +1,29 @@
+{
+    "windowWidth": 1280,
+    "windowHeight": 720,
+    "title": "DICE — Client",
+    "framerateLimit": 60,
+    "clearR": 20,
+    "clearG": 30,
+    "clearB": 50,
+    "startScene": "scenes/demo.json",
+    "globalScript": "",
+    "showFPS": true,
+    "showObjectCount": true,
+    "showControls": true,
+    "resizable": false,
+    "fonts": [
+        {
+            "id": "default_font",
+            "path": "assets/fonts/OpenSans-Regular.ttf"
+        }
+    ],
+    "luaMemoryLimitMb": 64,
+    "maxSceneObjects": 1000,
+    "network": {
+        "role": "client",
+        "port": 7777,
+        "hostIp": "127.0.0.1",
+        "playerName": "Player2"
+    }
+}

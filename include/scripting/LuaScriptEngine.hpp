@@ -5,7 +5,9 @@
 #include <filesystem>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 
 extern "C" {
@@ -98,17 +100,42 @@ public:
         return lua_[name].valid();
     }
 
-    template <typename... Args> void callGlobal(const std::string& name, Args&&... args) {
-        const sol::protected_function fn{lua_[name]};
+    template <typename... Args> bool callGlobal(const std::string& name, Args&&... args) {
+        const sol::protected_function fn = lua_[name];
         if (!fn.valid()) {
             spdlog::warn("LuaScriptEngine::callGlobal: function '{}' not found", name);
-            return;
+            return false;
         }
         auto result = fn(std::forward<Args>(args)...);
         if (!result.valid()) {
             const sol::error err = result;
             spdlog::error("LuaScriptEngine::callGlobal '{}': {}", name, err.what());
+            return false;
         }
+        return true;
+    }
+
+    template <typename... Returns, typename... Args>
+    std::optional<std::tuple<Returns...>> callGlobalRet(const std::string& name, Args&&... args) {
+        const sol::protected_function fn = lua_[name];
+        if (!fn.valid()) {
+            spdlog::warn("LuaScriptEngine::callGlobalRet: function '{}' not found", name);
+            return std::nullopt;
+        }
+        auto result = fn(std::forward<Args>(args)...);
+        if (!result.valid()) {
+            sol::error err = result;
+            spdlog::error("LuaScriptEngine::callGlobalRet '{}': {}", name, err.what());
+            return std::nullopt;
+        }
+        if constexpr (sizeof...(Returns) == 1) {
+            return std::make_tuple(result.template get<Returns>()...);
+        }
+        return result.template get<std::tuple<Returns...>>();
+    }
+
+    sol::state& getRawState() {
+        return lua_;
     }
 
     template <typename... Args> void callGlobalIfExists(const std::string& name, Args&&... args) {

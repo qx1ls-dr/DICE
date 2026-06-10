@@ -8,8 +8,10 @@
 
 #include "app/AppConfig.hpp"
 #include "controller/Controller.hpp"
+#include "core/ActionManager.hpp"
 #include "core/Model.hpp"
 #include "core/ResourceManager.hpp"
+#include "network/NetworkManager.hpp"
 #include "scripting/LuaScriptEngine.hpp"
 #include "ui/View.hpp"
 
@@ -17,7 +19,7 @@ namespace dice {
 
 class Application {
 public:
-    Application();
+    explicit Application(const std::string& config_path = "game.json");
     ~Application();
 
     Application(const Application&) = delete;
@@ -34,6 +36,7 @@ private:
     void render();
     void shutdown();
 
+    std::string configPath_;
     AppConfig config_;
     sf::RenderWindow window_;
 
@@ -41,9 +44,11 @@ private:
     core::ResourceManager<sf::Font> fonts_;
 
     core::Model model_;
+    core::ActionManager actionManager_;
     view::View view_;
     scripting::LuaScriptEngine lua_;
     controller::Controller controller_;
+    network::NetworkManager networkManager_;
 
     bool running_ = false;
     sf::Clock clock_;

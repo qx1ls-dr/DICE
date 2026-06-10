@@ -16,7 +16,7 @@ GameClient::~GameClient() {
 }
 
 bool GameClient::connect(const std::string& host_ip,
-                         uint16_t port,
+                         uint16_t           port,
                          const std::string& player_name) {
     if (isConnected_) {
         spdlog::warn("Already connected");
@@ -25,7 +25,7 @@ bool GameClient::connect(const std::string& host_ip,
 
     spdlog::info("Connecting to {}:{} as {}", host_ip, port, player_name);
 
-    sf::Socket::Status status = socket_.connect(host_ip, port);
+    const sf::Socket::Status status = socket_.connect(host_ip, port);
     if (status != sf::Socket::Done) {
         spdlog::error("Failed to connect: {}", static_cast<int>(status));
         return false;
@@ -33,14 +33,14 @@ bool GameClient::connect(const std::string& host_ip,
     lastPingTime_ = std::chrono::steady_clock::now();
 
     socket_.setBlocking(false);
-    serverIp_ = host_ip;
-    serverPort_ = port;
+    serverIp_    = host_ip;
+    serverPort_  = port;
     isConnected_ = true;
 
     auto handshake = NetworkMessage::createHandshake(player_name);
     send(handshake);
 
-    running_ = true;
+    running_       = true;
     receiveThread_ = std::thread(&GameClient::receiveLoop, this);
 
     spdlog::info("Connected to server");
@@ -52,11 +52,11 @@ void GameClient::disconnect() {
         return;
     }
     if (running_) {
-        auto disconnect = NetworkMessage::createDisconnect();
-        send(disconnect);
+        auto disconnectMsg = NetworkMessage::createDisconnect();
+        send(disconnectMsg);
     }
 
-    running_ = false;
+    running_     = false;
     isConnected_ = false;
     gameStarted_ = false;
 
@@ -107,9 +107,9 @@ void GameClient::handleMessage(const NetworkMessage& msg) {
         case MessageType::HandshakeAck: {
             std::string newClientId;
             {
-                const std::lock_guard lock(clientIdMutex_);
-                clientId_ = msg.data.value("clientId", "");
-                newClientId = clientId_;
+                const std::lock_guard<std::mutex> lock(clientIdMutex_);
+                clientId_    = msg.data.value("clientId", "");
+                newClientId  = clientId_;
             }
             gameStarted_ = msg.data.value("gameStarted", false);
             spdlog::info("Handshake acknowledged. Client ID: {}", newClientId);
@@ -121,10 +121,10 @@ void GameClient::handleMessage(const NetworkMessage& msg) {
 
         case MessageType::PlayerJoined: {
             ClientInfo info;
-            info.id = msg.fromId;
-            info.name = msg.data.value("name", "Unknown");
-            info.status = static_cast<PlayerStatus>(msg.data.value("status", 0));
-            spdlog::info("Player joined: {}", info.name);
+            info.setId(msg.fromId);
+            info.setName(msg.data.value("name", "Unknown"));
+            info.setStatus(static_cast<PlayerStatus>(msg.data.value("status", 0)));
+            spdlog::info("Player joined: {}", info.getName());
             if (onPlayerJoined_) {
                 onPlayerJoined_(info);
             }
@@ -160,7 +160,7 @@ void GameClient::handleMessage(const NetworkMessage& msg) {
             break;
 
         case MessageType::Event: {
-            const std::string objectId = msg.data.value("object_id", "");
+            const std::string objectId  = msg.data.value("object_id", "");
             const std::string eventName = msg.data.value("event", "");
             applyEvent(objectId, eventName);
             break;
@@ -172,6 +172,13 @@ void GameClient::handleMessage(const NetworkMessage& msg) {
                 const float x = msg.data.value("x", 0.0F);
                 const float y = msg.data.value("y", 0.0F);
                 applyMoveObject(objectId, x, y);
+            }
+            break;
+
+        case MessageType::ActionRejected:
+            if (onActionRejected_) {
+                const std::string reason = msg.data.value("reason", "Action rejected");
+                onActionRejected_(reason);
             }
             break;
 
@@ -231,7 +238,7 @@ void GameClient::applyMoveObject(const std::string& object_id, float x, float y)
     }
     spdlog::debug("Applying move: {} to ({}, {})", object_id, x, y);
 
-    core::MoveObjectAction action(object_id, sf::Vector2f(x, y));
+    const core::MoveObjectAction action(object_id, sf::Vector2f(x, y));
     if (action.canExecute(*model_)) {
         action.execute(*model_);
     }
@@ -245,6 +252,16 @@ void GameClient::applySnapshot(const nlohmann::json& state) {
 
     actionManager_->saveSnapshot(*model_);
     model_->fromJson(state);
+}
+
+void GameClient::sendUndo(uint32_t target_seq) {
+    if (!gameStarted_) {
+        spdlog::warn("Cannot send undo - game not started");
+        return;
+    }
+    auto msg = NetworkMessage::createUndoRequest(target_seq);
+    send(msg);
+    spdlog::info("Sent undo request (targetSeq={})", target_seq);
 }
 
 void GameClient::sendMoveObject(const std::string& object_id, float x, float y) {
@@ -289,7 +306,7 @@ void GameClient::send(const NetworkMessage& msg) {
 }
 
 void GameClient::update() {
-    auto now = std::chrono::steady_clock::now();
+    const auto now = std::chrono::steady_clock::now();
 
     if (std::chrono::duration<float>(now - lastPingTime_).count() > 5.0F) {
         auto ping = NetworkMessage::createPing();
@@ -325,6 +342,10 @@ void GameClient::setOnGameStarted(std::function<void()> handler) {
 void GameClient::setOnChatReceived(
     std::function<void(const std::string&, const std::string&)> handler) {
     onChatReceived_ = std::move(handler);
+}
+
+void GameClient::setOnActionRejected(std::function<void(const std::string&)> handler) {
+    onActionRejected_ = std::move(handler);
 }
 
 } // namespace dice::network
