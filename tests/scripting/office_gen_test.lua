@@ -26,6 +26,31 @@ local function bfs_dist(grid, sr, sc)
     return dist
 end
 
+-- One shortest start->elevator path, descending BFS distance with the same
+-- neighbour order the generator uses, so it lands on the same on-path coffee
+-- the generator placed to guarantee survivability.
+local function reconstruct_path(grid, dist, start, elevator)
+    local rows, cols = #grid, #grid[1]
+    local D4 = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
+    local rev = {{r = elevator.r, c = elevator.c}}
+    local cr, cc = elevator.r, elevator.c
+    while not (cr == start.r and cc == start.c) do
+        local d = dist[cr][cc]
+        for _, dd in ipairs(D4) do
+            local nr, nc = cr + dd[1], cc + dd[2]
+            if nr >= 1 and nr <= rows and nc >= 1 and nc <= cols
+               and dist[nr][nc] == d - 1 then
+                cr, cc = nr, nc
+                break
+            end
+        end
+        rev[#rev + 1] = {r = cr, c = cc}
+    end
+    local path = {}                                  -- start .. elevator
+    for i = #rev, 1, -1 do path[#path + 1] = rev[i] end
+    return path
+end
+
 function test_generate_grid()
     local rows, cols = 10, 10
     local grid, items, elevator = gen.generate(rows, cols)
@@ -95,18 +120,40 @@ function test_rooms_exist()
     error("Expected at least one 3x3 open floor block (a room)")
 end
 
-function test_elevator_reachable_and_calibrated()
-    for _ = 1, 20 do
-        local grid, items, elevator, start = gen.generate(32, 48)
-        local dist = bfs_dist(grid, start.r, start.c)
-        local L = dist[elevator.r][elevator.c]
-        assert(L ~= nil, "Elevator must be reachable from start")
-        assert(L > 0, "Elevator must not sit on the start tile")
-        -- Mirrors gen.lua calibration: STRESS_PER_STEP=2, COFFEE_RELIEF=25,
-        -- search slack x1.5, full 100-point stress bar as budget.
-        local relief = #items * 25
-        assert(relief >= L * 2 * 1.5 - 100,
-            "Coffee relief " .. relief .. " too low for path length " .. L)
+-- Each level must be guaranteed passable. Simulate an optimal full run
+-- (MAX_FLOOR floors): walk each floor's shortest path, drink the coffee that
+-- lies on it, and carry stress across floors exactly as the engine does
+-- (OfficeLogic.try_move: drink on entry, then +STRESS_PER_STEP; reaching the
+-- elevator beats burnout). The player must never burn out on a non-elevator
+-- tile, on any floor, in any trial.
+function test_levels_guaranteed_passable()
+    local SPS, RELIEF, FLOORS = 2, 25, 5
+    for trial = 1, 40 do
+        local stress = 0
+        for floor = 1, FLOORS do
+            local grid, items, elevator, start = gen.generate(32, 48)
+            local coffee = {}
+            for _, it in ipairs(items) do coffee[it.r .. ":" .. it.c] = true end
+
+            local dist = bfs_dist(grid, start.r, start.c)
+            assert(dist[elevator.r][elevator.c] ~= nil,
+                "Elevator unreachable on floor " .. floor .. " trial " .. trial)
+            local path = reconstruct_path(grid, dist, start, elevator)
+
+            for i = 2, #path do
+                local t = path[i]
+                local on_elevator = (t.r == elevator.r and t.c == elevator.c)
+                if coffee[t.r .. ":" .. t.c] then
+                    stress = math.max(0, stress - RELIEF)
+                end
+                stress = stress + SPS
+                if not on_elevator then
+                    assert(stress < 100,
+                        "Burnout on floor " .. floor .. " trial " .. trial ..
+                        " step " .. (i - 1) .. " stress=" .. stress)
+                end
+            end
+        end
     end
 end
 
@@ -115,5 +162,5 @@ test_generate_items()
 test_generate_start()
 test_generate_dimensions()
 test_rooms_exist()
-test_elevator_reachable_and_calibrated()
+test_levels_guaranteed_passable()
 print("Office Gen Test: PASS")

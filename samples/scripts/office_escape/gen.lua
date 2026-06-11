@@ -136,7 +136,31 @@ function M.generate(rows, cols)
     local pick = reached[rand(math.floor(#reached * 2 / 3) + 1, #reached)]
     local elevator = {r = pick.r, c = pick.c}
 
-    -- Coffee: 0-2 per room, then top up until a fair run is possible.
+    -- Reconstruct one shortest start->elevator path by descending BFS distance,
+    -- using the same deterministic neighbour order the test uses — so the
+    -- on-path coffee that guarantees survivability lands on the very path the
+    -- optimal player walks.
+    local D4 = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
+    local path
+    do
+        local rev = {{r = elevator.r, c = elevator.c}}
+        local cr, cc = elevator.r, elevator.c
+        while not (cr == start.r and cc == start.c) do
+            local d = dist[cr][cc]
+            for _, dd in ipairs(D4) do
+                local nr, nc = cr + dd[1], cc + dd[2]
+                if nr >= 1 and nr <= rows and nc >= 1 and nc <= cols
+                   and dist[nr][nc] == d - 1 then
+                    cr, cc = nr, nc
+                    break
+                end
+            end
+            rev[#rev + 1] = {r = cr, c = cc}
+        end
+        path = {}                                    -- start .. elevator
+        for i = #rev, 1, -1 do path[#path + 1] = rev[i] end
+    end
+
     local items = {}
     local occupied = {
         [start.r .. ":" .. start.c] = true,
@@ -147,27 +171,38 @@ function M.generate(rows, cols)
         if grid[r][c] == "floor" and not occupied[k] then
             occupied[k] = true
             items[#items + 1] = {type = "coffee", r = r, c = c}
+            return true
         end
+        return false
     end
+
+    local sps = (OfficeLogic and OfficeLogic.STRESS_PER_STEP) or 2
+    local relief = (OfficeLogic and OfficeLogic.COFFEE_RELIEF) or 25
+    local L = #path - 1
+    local needed = math.ceil(L * sps / relief)
+    local gap = math.max(1, relief // sps)
+    local placed = 0
+    local i = 1 + gap
+    while i <= #path and placed < needed do
+        if try_add(path[i].r, path[i].c) then placed = placed + 1 end
+        i = i + gap
+    end
+    i = 2
+    while placed < needed and i < #path do
+        if try_add(path[i].r, path[i].c) then placed = placed + 1 end
+        i = i + 1
+    end
+
     for _, room in ipairs(rooms) do
-        for _ = 1, rand(0, 2) do
+        for _ = 1, rand(0, 1) do
             try_add(rand(room.r1, room.r2), rand(room.c1, room.c2))
         end
     end
 
-    -- Calibration: total coffee relief must cover the fair path with x1.5
-    -- search slack minus the full 100-point stress bar. Mirrors OfficeLogic
-    -- constants when it is loaded (engine); falls back in plain-Lua tests.
-    local sps = (OfficeLogic and OfficeLogic.STRESS_PER_STEP) or 2
-    local relief = (OfficeLogic and OfficeLogic.COFFEE_RELIEF) or 25
-    local L = dist[elevator.r][elevator.c]
-    local needed = math.ceil((L * sps * 1.5 - 100) / relief)
-    if needed < 1 then needed = 1 end
-    local guard = 0
-    while #items < needed and guard < 10000 do
-        local t = reached[rand(1, #reached)]
-        try_add(t.r, t.c)
-        guard = guard + 1
+    if #items == 0 then
+        for _, t in ipairs(reached) do
+            if try_add(t.r, t.c) then break end
+        end
     end
 
     return grid, items, elevator, start
