@@ -1,0 +1,8 @@
+{
+  "scripts": [
+    "scripts/office_escape/gen.lua",
+    "scripts/office_escape/logic.lua",
+    "scripts/office_escape/game.lua"
+  ],
+  "objects": []
+}
