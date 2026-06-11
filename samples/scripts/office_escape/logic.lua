@@ -71,13 +71,15 @@ function M.try_move(state, dr, dc)
 end
 
 -- Take the elevator down. Returns "win" if this was the ground floor (escape),
--- otherwise "next" after decrementing the floor and generating it.
+-- otherwise "next" after decrementing the floor and generating it. Clearing a
+-- floor resets stress to 0 — each floor is a fresh, self-contained challenge.
 function M.descend(state, generate_fn, rows, cols)
     state.floors_cleared = state.floors_cleared + 1
     if state.floor <= 1 then
         return "win"
     end
     state.floor = state.floor - 1
+    state.stress = 0
     M.new_floor(state, generate_fn, rows, cols)
     return "next"
 end

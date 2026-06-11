@@ -120,17 +120,11 @@ function test_rooms_exist()
     error("Expected at least one 3x3 open floor block (a room)")
 end
 
--- Each level must be guaranteed passable. Simulate an optimal full run
--- (MAX_FLOOR floors): walk each floor's shortest path, drink the coffee that
--- lies on it, and carry stress across floors exactly as the engine does
--- (OfficeLogic.try_move: drink on entry, then +STRESS_PER_STEP; reaching the
--- elevator beats burnout). The player must never burn out on a non-elevator
--- tile, on any floor, in any trial.
 function test_levels_guaranteed_passable()
     local SPS, RELIEF, FLOORS = 2, 25, 5
     for trial = 1, 40 do
-        local stress = 0
         for floor = 1, FLOORS do
+            local stress = 0   -- cleared floors reset stress
             local grid, items, elevator, start = gen.generate(32, 48)
             local coffee = {}
             for _, it in ipairs(items) do coffee[it.r .. ":" .. it.c] = true end

@@ -100,11 +100,13 @@ end
 function test_descend_next()
     local s = fresh()
     s.floor = 3
+    s.stress = 60
     local outcome = logic.descend(s, fake_gen, 5, 5)
     assert(outcome == "next", "descend from floor 3 continues")
     assert(s.floor == 2, "floor decremented")
     assert(s.floors_cleared == 1, "floor counted as cleared")
     assert(s.player_r == 1 and s.player_c == 1, "player placed at new start")
+    assert(s.stress == 0, "stress resets to 0 when a floor is cleared")
 end
 
 function test_descend_win()
