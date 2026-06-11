@@ -74,3 +74,5 @@
 |------|----------|------|
 | [Игра в кости](games/dice-game.md) | Два игрока бросают кубики, набирая очки до 21 | `triggers` `scripting` `textures` `state` |
 | [Нарды](games/nardi.md) | Длинные нарды: перетаскивание шашек, пресеты, Lua-логика хода | `drag` `presets` `hierarchy` `keyboard` |
+| [Змейка](games/snake.md) | Аркадная змейка на сетке: уровни сложности, отрисовка через `cpp_draw_rect`, сцена без объектов | `lua` `input` `state` `update` `draw` |
+| [Office Escape](games/office-escape.md) | Побег из офисной башни: BSP комнаты-коридоры, карта больше экрана с камерой, гарантированная проходимость | `procgen` `camera` `state` `update` `draw` |
