@@ -10,14 +10,14 @@
     {
       "id": "die_1", "type": "GameObject",
       "position": [615, 360], "scale": [0.75, 0.75],
-      "textureFile": "assets/dieWhite_border1.png",
+      "textureFile": "assets/nardi/dieWhite_border1.png",
       "zOrder": 8, "draggable": true,
       "presets": ["Rollable"]
     },
     {
       "id": "die_2", "type": "GameObject",
       "position": [665, 360], "scale": [0.75, 0.75],
-      "textureFile": "assets/dieRed_border1.png",
+      "textureFile": "assets/nardi/dieRed_border1.png",
       "zOrder": 8, "draggable": true,
       "presets": ["Rollable"]
     },
@@ -25,14 +25,14 @@
     {
       "id": "btn_end_turn", "type": "GameObject",
       "position": [640, 695], "scale": [4.2, 0.62],
-      "textureFile": "assets/button.png",
+      "textureFile": "assets/nardi/button.png",
       "zOrder": 8,
       "triggers": { "on_click": "end_turn" }
     },
     {
       "id": "btn_new_game", "type": "GameObject",
       "position": [-300, 695], "scale": [3.5, 0.62],
-      "textureFile": "assets/button.png",
+      "textureFile": "assets/nardi/button.png",
       "zOrder": 8, "active": false,
       "triggers": { "on_click": "new_game" }
     },

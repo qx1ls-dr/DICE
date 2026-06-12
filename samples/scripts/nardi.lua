@@ -250,13 +250,13 @@ end
 local function setDiceTextures()
     local v1 = game.dice[1] or 1
     local v2 = (game.dice[2] or game.dice[1]) or 1
-    cpp_set_obj_texture("die_1", "assets/dieWhite_border" .. v1 .. ".png")
-    cpp_set_obj_texture("die_2", "assets/dieRed_border"   .. v2 .. ".png")
+    cpp_set_obj_texture("die_1", "assets/nardi/dieWhite_border" .. v1 .. ".png")
+    cpp_set_obj_texture("die_2", "assets/nardi/dieRed_border"   .. v2 .. ".png")
 end
 
 local function resetDiceTextures()
-    cpp_set_obj_texture("die_1", "assets/dieWhite_border1.png")
-    cpp_set_obj_texture("die_2", "assets/dieRed_border1.png")
+    cpp_set_obj_texture("die_1", "assets/nardi/dieWhite_border1.png")
+    cpp_set_obj_texture("die_2", "assets/nardi/dieRed_border1.png")
 end
 
 local function updateDiceColors()
