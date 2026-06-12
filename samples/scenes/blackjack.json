@@ -1,0 +1,1732 @@
+{
+  "scripts": [
+    "scripts/blackjack.lua"
+  ],
+  "objects": [
+    {
+      "type": "Card",
+      "id": "card_s1_r1",
+      "name": "s1r1",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 1,
+        "suit": 1
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s1_r2",
+      "name": "s1r2",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 2,
+        "suit": 1
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s1_r3",
+      "name": "s1r3",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 3,
+        "suit": 1
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s1_r4",
+      "name": "s1r4",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 4,
+        "suit": 1
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s1_r5",
+      "name": "s1r5",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 5,
+        "suit": 1
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s1_r6",
+      "name": "s1r6",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 6,
+        "suit": 1
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s1_r7",
+      "name": "s1r7",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 7,
+        "suit": 1
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s1_r8",
+      "name": "s1r8",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 8,
+        "suit": 1
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s1_r9",
+      "name": "s1r9",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 9,
+        "suit": 1
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s1_r10",
+      "name": "s1r10",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 10,
+        "suit": 1
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s1_r11",
+      "name": "s1r11",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 11,
+        "suit": 1
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s1_r12",
+      "name": "s1r12",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 12,
+        "suit": 1
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s1_r13",
+      "name": "s1r13",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 13,
+        "suit": 1
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s2_r1",
+      "name": "s2r1",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 1,
+        "suit": 2
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s2_r2",
+      "name": "s2r2",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 2,
+        "suit": 2
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s2_r3",
+      "name": "s2r3",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 3,
+        "suit": 2
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s2_r4",
+      "name": "s2r4",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 4,
+        "suit": 2
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s2_r5",
+      "name": "s2r5",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 5,
+        "suit": 2
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s2_r6",
+      "name": "s2r6",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 6,
+        "suit": 2
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s2_r7",
+      "name": "s2r7",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 7,
+        "suit": 2
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s2_r8",
+      "name": "s2r8",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 8,
+        "suit": 2
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s2_r9",
+      "name": "s2r9",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 9,
+        "suit": 2
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s2_r10",
+      "name": "s2r10",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 10,
+        "suit": 2
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s2_r11",
+      "name": "s2r11",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 11,
+        "suit": 2
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s2_r12",
+      "name": "s2r12",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 12,
+        "suit": 2
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s2_r13",
+      "name": "s2r13",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 13,
+        "suit": 2
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s3_r1",
+      "name": "s3r1",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 1,
+        "suit": 3
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s3_r2",
+      "name": "s3r2",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 2,
+        "suit": 3
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s3_r3",
+      "name": "s3r3",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 3,
+        "suit": 3
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s3_r4",
+      "name": "s3r4",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 4,
+        "suit": 3
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s3_r5",
+      "name": "s3r5",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 5,
+        "suit": 3
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s3_r6",
+      "name": "s3r6",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 6,
+        "suit": 3
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s3_r7",
+      "name": "s3r7",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 7,
+        "suit": 3
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s3_r8",
+      "name": "s3r8",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 8,
+        "suit": 3
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s3_r9",
+      "name": "s3r9",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 9,
+        "suit": 3
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s3_r10",
+      "name": "s3r10",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 10,
+        "suit": 3
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s3_r11",
+      "name": "s3r11",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 11,
+        "suit": 3
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s3_r12",
+      "name": "s3r12",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 12,
+        "suit": 3
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s3_r13",
+      "name": "s3r13",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 13,
+        "suit": 3
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s4_r1",
+      "name": "s4r1",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 1,
+        "suit": 4
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s4_r2",
+      "name": "s4r2",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 2,
+        "suit": 4
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s4_r3",
+      "name": "s4r3",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 3,
+        "suit": 4
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s4_r4",
+      "name": "s4r4",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 4,
+        "suit": 4
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s4_r5",
+      "name": "s4r5",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 5,
+        "suit": 4
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s4_r6",
+      "name": "s4r6",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 6,
+        "suit": 4
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s4_r7",
+      "name": "s4r7",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 7,
+        "suit": 4
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s4_r8",
+      "name": "s4r8",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 8,
+        "suit": 4
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s4_r9",
+      "name": "s4r9",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 9,
+        "suit": 4
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s4_r10",
+      "name": "s4r10",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 10,
+        "suit": 4
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s4_r11",
+      "name": "s4r11",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 11,
+        "suit": 4
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s4_r12",
+      "name": "s4r12",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 12,
+        "suit": 4
+      }
+    },
+    {
+      "type": "Card",
+      "id": "card_s4_r13",
+      "name": "s4r13",
+      "position": [
+        -300,
+        -300
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/card_back.png",
+      "zOrder": 1,
+      "active": true,
+      "visible": false,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "face_up": false,
+      "player": 0,
+      "properties": {
+        "rank": 13,
+        "suit": 4
+      }
+    },
+    {
+      "type": "GameObject",
+      "id": "deck_visual",
+      "name": "Deck Visual",
+      "position": [
+        1130,
+        360
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "rotation": 0.0,
+      "textureFile": "assets/blackjack/deck_single.png",
+      "zOrder": 2,
+      "active": true,
+      "visible": true,
+      "draggable": false,
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ],
+      "properties": {}
+    },
+    {
+      "type": "GameObject",
+      "id": "btn_deal",
+      "name": "Deal Button",
+      "position": [
+        640,
+        648
+      ],
+      "scale": [
+        260,
+        52
+      ],
+      "rotation": 0.0,
+      "zOrder": 5,
+      "active": false,
+      "visible": false,
+      "draggable": false,
+      "triggers": {
+        "on_click": "deal_round"
+      },
+      "properties": {},
+      "textureFile": "assets/blackjack/white.png",
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "type": "GameObject",
+      "id": "btn_hit",
+      "name": "Hit Button",
+      "position": [
+        430,
+        648
+      ],
+      "scale": [
+        220,
+        52
+      ],
+      "rotation": 0.0,
+      "zOrder": 5,
+      "active": false,
+      "visible": false,
+      "draggable": false,
+      "triggers": {
+        "on_click": "player_hit"
+      },
+      "properties": {},
+      "textureFile": "assets/blackjack/white.png",
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "type": "GameObject",
+      "id": "btn_stand",
+      "name": "Stand Button",
+      "position": [
+        850,
+        648
+      ],
+      "scale": [
+        220,
+        52
+      ],
+      "rotation": 0.0,
+      "zOrder": 5,
+      "active": false,
+      "visible": false,
+      "draggable": false,
+      "triggers": {
+        "on_click": "player_stand"
+      },
+      "properties": {},
+      "textureFile": "assets/blackjack/white.png",
+      "color": [
+        255,
+        255,
+        255,
+        255
+      ]
+    }
+  ]
+}

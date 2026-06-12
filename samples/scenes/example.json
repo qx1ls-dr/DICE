@@ -1,0 +1,12 @@
+{
+  "objects": [
+    {
+      "type": "Dice",
+      "id": "d6",
+      "position": [250, 250],
+      "textureFile": "assets/dieWhite_border1.png",
+      "faceCount": 6,
+      "value": 1
+    }
+  ]
+}
