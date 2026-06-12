@@ -73,7 +73,7 @@ cd build && ./dice
 
 ## Разработка с AI-ассистентами
 
-В репозитории есть скилл для AI-ассистентов (Claude Code, Gemini CLI, Copilot CLI и других совместимых инструментов на базе [superpowers](https://github.com/superpowers-sh/superpowers)), который автоматически применяется при работе над играми на DICE. Скилл живёт в [.claude/skills/dice-game-development/](.claude/skills/dice-game-development/SKILL.md).
+В репозитории есть скилл для AI-ассистентов (Claude Code, Gemini CLI, Copilot CLI и других совместимых инструментов на базе [superpowers](https://github.com/superpowers-sh/superpowers) (рекомендуется использовать в конбинации), который автоматически применяется при работе над играми на DICE. Скилл живёт в [.claude/skills/dice-game-development/](.claude/skills/dice-game-development/SKILL.md).
 
 Что он делает:
 
