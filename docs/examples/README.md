@@ -76,3 +76,4 @@
 | [Нарды](games/nardi.md) | Длинные нарды: перетаскивание шашек, пресеты, Lua-логика хода | `drag` `presets` `hierarchy` `keyboard` |
 | [Змейка](games/snake.md) | Аркадная змейка на сетке: уровни сложности, отрисовка через `cpp_draw_rect`, сцена без объектов | `lua` `input` `state` `update` `draw` |
 | [Office Escape](games/office-escape.md) | Побег из офисной башни: BSP комнаты-коридоры, карта больше экрана с камерой, гарантированная проходимость | `procgen` `camera` `state` `update` `draw` |
+| [Сапёр](games/minesweeper.md) | Классический Сапёр: три сложности, BFS-заливка, ретро-интерфейс Win95 через `draw()`, hitbox-объекты | `Tile` `state` `update` `draw` `bfs` `retro-ui` |

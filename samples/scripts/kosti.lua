@@ -1,6 +1,6 @@
 -- scripts/game.lua
--- Game state and logic for the DICE demo.
--- Loaded once per scene via "scripts" array in demo.json.
+-- Game state and logic for the kosti.
+-- Loaded once per scene via "scripts" array in kosti.json.
 
 game = {
     currentPlayer = 1,
