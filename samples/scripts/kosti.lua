@@ -1,6 +1,6 @@
 -- scripts/game.lua
--- Game state and logic for the DICE demo.
--- Loaded once per scene via "scripts" array in demo.json.
+-- Game state and logic for the kosti.
+-- Loaded once per scene via "scripts" array in kosti.json.
 
 game = {
     currentPlayer = 1,
@@ -56,7 +56,7 @@ function update(dt)
     local function updateDie(obj, player, prefix)
         local roll = game.diceRoll[player]
         if roll > 0 then
-            cpp_set_obj_texture(obj:getId(), "assets/" .. prefix .. roll .. ".png")
+            cpp_set_obj_texture(obj:getId(), "assets/kosti/" .. prefix .. roll .. ".png")
         end
         if game.currentPlayer == player and not game.hasRolled and not game.gameOver then
             obj:setColor(255, 255, 255, 255)
